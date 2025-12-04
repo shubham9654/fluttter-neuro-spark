@@ -99,8 +99,13 @@ class WelcomePage extends ConsumerWidget {
                       ThemedPrimaryButton(
                         text: 'Get Started',
                         onPressed: () async {
-                          // Sign in anonymously for quick start
-                          await authService.signInAnonymously();
+                          try {
+                            // Sign in anonymously for quick start
+                            await authService.signInAnonymously();
+                          } catch (e) {
+                            // Continue anyway - offline mode
+                            debugPrint('Auth failed, continuing offline: $e');
+                          }
                           if (context.mounted) {
                             context.go('/onboarding/neurotype');
                           }

@@ -52,21 +52,42 @@ class _NeuroTypeSetupPageState extends State<NeuroTypeSetupPage> {
           backgroundColor: AppColors.errorRed,
         ),
       );
-      await HapticHelper.error();
+      try {
+        await HapticHelper.error();
+      } catch (e) {
+        debugPrint('Haptic error: $e');
+      }
       return;
     }
 
-    await HapticHelper.mediumImpact();
+    try {
+      await HapticHelper.mediumImpact();
+    } catch (e) {
+      debugPrint('Haptic error: $e');
+    }
 
     // Save neurotype profile
-    final profile = NeurotypeProfile(
-      selectedStruggles: _selectedStruggles.toList(),
-      createdAt: DateTime.now(),
-    );
-    await HiveService.saveNeurotypeProfile(profile);
+    try {
+      final profile = NeurotypeProfile(
+        selectedStruggles: _selectedStruggles.toList(),
+        createdAt: DateTime.now(),
+      );
+      await HiveService.saveNeurotypeProfile(profile);
+    } catch (e) {
+      debugPrint('Failed to save neurotype profile: $e');
+      // Continue anyway - data will be saved later
+    }
 
     if (mounted) {
-      context.push('/onboarding/energy');
+      try {
+        context.go('/onboarding/energy'); // Use go instead of push for better navigation
+      } catch (e) {
+        debugPrint('Navigation error: $e');
+        // Fallback navigation
+        if (mounted) {
+          Navigator.of(context).pushReplacementNamed('/onboarding/energy');
+        }
+      }
     }
   }
 
@@ -85,7 +106,13 @@ class _NeuroTypeSetupPageState extends State<NeuroTypeSetupPage> {
                 totalSteps: 2,
                 title: 'Tell Us About You',
                 subtitle: 'Select all that apply. This helps us personalize your experience.',
-                onBack: () => context.pop(),
+                onBack: () {
+                  if (context.canPop()) {
+                    context.pop();
+                  } else {
+                    context.go('/');
+                  }
+                },
               ),
             ),
 

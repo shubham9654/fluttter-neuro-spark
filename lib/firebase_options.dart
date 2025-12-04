@@ -36,13 +36,13 @@ class DefaultFirebaseOptions {
   }
 
   static const FirebaseOptions web = FirebaseOptions(
-    apiKey: 'AIzaSyDemoKeyForDevelopment-ReplaceWithReal',
-    appId: '1:123456789:web:abcdef123456',
-    messagingSenderId: '123456789',
-    projectId: 'neurospark-demo',
-    authDomain: 'neurospark-demo.firebaseapp.com',
-    storageBucket: 'neurospark-demo.appspot.com',
-    measurementId: 'G-MEASUREMENT',
+    apiKey: "AIzaSyAOjs9Qhu5QCqF2B23vMX-uw29LTQsg4sc",
+    authDomain: "neurospark-cf205.firebaseapp.com",
+    projectId: "neurospark-cf205",
+    storageBucket: "neurospark-cf205.firebasestorage.app",
+    messagingSenderId: "773865468608",
+    appId: "1:773865468608:web:ec514e8823df4bdfdb3325",
+    measurementId: "G-JN47RV3HEM",
   );
 
   static const FirebaseOptions android = FirebaseOptions(
@@ -83,4 +83,3 @@ class DefaultFirebaseOptions {
     storageBucket: 'neurospark-demo.appspot.com',
   );
 }
-

@@ -4,6 +4,7 @@ import 'package:go_router/go_router.dart';
 // Import pages as they are created
 // Auth
 import 'package:neuro_spark/features/auth/presentation/pages/welcome_page.dart';
+import 'package:neuro_spark/features/auth/presentation/pages/welcome_page_simple.dart';
 // Onboarding
 import 'package:neuro_spark/features/onboarding/presentation/pages/neurotype_setup_page.dart';
 import 'package:neuro_spark/features/onboarding/presentation/pages/energy_mapping_page.dart';
@@ -43,7 +44,7 @@ class AppRouter {
   static const String doubleSession = '/lobby/session';
   static const String shop = '/shop';
   static const String settingsSensory = '/settings/sensory';
-  
+
   // GoRouter Configuration
   static final GoRouter router = GoRouter(
     initialLocation: welcome,
@@ -55,28 +56,32 @@ class AppRouter {
         name: 'welcome',
         pageBuilder: (context, state) => MaterialPage(
           key: state.pageKey,
-          child: const WelcomePage(),
+          child: const WelcomePageSimple(), // Simple version for now
         ),
       ),
-      
+
+      // Welcome page as separate route for testing
+      GoRoute(
+        path: '/welcome',
+        name: 'welcome_full',
+        pageBuilder: (context, state) =>
+            MaterialPage(key: state.pageKey, child: const WelcomePage()),
+      ),
+
       // Onboarding Flow
       GoRoute(
         path: '/onboarding/neurotype',
         name: 'dopamine_profile',
-        pageBuilder: (context, state) => MaterialPage(
-          key: state.pageKey,
-          child: const NeuroTypeSetupPage(),
-        ),
+        pageBuilder: (context, state) =>
+            MaterialPage(key: state.pageKey, child: const NeuroTypeSetupPage()),
       ),
       GoRoute(
         path: '/onboarding/energy',
         name: 'energy_map',
-        pageBuilder: (context, state) => MaterialPage(
-          key: state.pageKey,
-          child: const EnergyMappingPage(),
-        ),
+        pageBuilder: (context, state) =>
+            MaterialPage(key: state.pageKey, child: const EnergyMappingPage()),
       ),
-      
+
       // Main Dashboard
       GoRoute(
         path: '/dashboard',
@@ -103,17 +108,15 @@ class AppRouter {
           ),
         ],
       ),
-      
+
       // Task Sorter
       GoRoute(
         path: '/sorter',
         name: 'sorter',
-        pageBuilder: (context, state) => MaterialPage(
-          key: state.pageKey,
-          child: const DailySorterPage(),
-        ),
+        pageBuilder: (context, state) =>
+            MaterialPage(key: state.pageKey, child: const DailySorterPage()),
       ),
-      
+
       // Focus Session
       GoRoute(
         path: '/focus/:taskId',
@@ -129,12 +132,10 @@ class AppRouter {
       GoRoute(
         path: '/focus/victory',
         name: 'victory',
-        pageBuilder: (context, state) => MaterialPage(
-          key: state.pageKey,
-          child: const VictoryPage(),
-        ),
+        pageBuilder: (context, state) =>
+            MaterialPage(key: state.pageKey, child: const VictoryPage()),
       ),
-      
+
       // Body Doubling
       GoRoute(
         path: '/lobby',
@@ -154,30 +155,24 @@ class AppRouter {
           ),
         ],
       ),
-      
+
       // Dopamine Shop
       GoRoute(
         path: '/shop',
         name: 'shop',
         pageBuilder: (context, state) => MaterialPage(
           key: state.pageKey,
-          child: const MainScaffold(
-            currentIndex: 2,
-            child: DopamineShopPage(),
-          ),
+          child: const MainScaffold(currentIndex: 2, child: DopamineShopPage()),
         ),
       ),
-      
+
       // Settings
       GoRoute(
         path: '/settings',
         name: 'settings',
         pageBuilder: (context, state) => MaterialPage(
           key: state.pageKey,
-          child: const MainScaffold(
-            currentIndex: 3,
-            child: SettingsPage(),
-          ),
+          child: const MainScaffold(currentIndex: 3, child: SettingsPage()),
         ),
         routes: [
           // Edit Profile
@@ -209,7 +204,7 @@ class AppRouter {
           ),
         ],
       ),
-      
+
       // Settings
       GoRoute(
         path: '/settings/sensory',
@@ -220,16 +215,28 @@ class AppRouter {
         ),
       ),
     ],
-    
+
     // Error handling
-    errorPageBuilder: (context, state) => MaterialPage(
-      key: state.pageKey,
-      child: Scaffold(
-        body: Center(
-          child: Text('Page not found: ${state.uri.path}'),
+    errorBuilder: (context, state) => Scaffold(
+      body: Center(
+        child: Column(
+          mainAxisAlignment: MainAxisAlignment.center,
+          children: [
+            const Icon(Icons.error_outline, size: 64, color: Colors.red),
+            const SizedBox(height: 16),
+            Text(
+              'Error: ${state.error}',
+              style: const TextStyle(fontSize: 16),
+              textAlign: TextAlign.center,
+            ),
+            const SizedBox(height: 16),
+            ElevatedButton(
+              onPressed: () => router.go('/'),
+              child: const Text('Go Home'),
+            ),
+          ],
         ),
       ),
     ),
   );
 }
-

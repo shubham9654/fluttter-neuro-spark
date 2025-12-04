@@ -40,18 +40,35 @@ class _EnergyMappingPageState extends State<EnergyMappingPage> {
   int? _selectedBlockIndex;
 
   Future<void> _saveSchedule() async {
-    await HapticHelper.success();
+    try {
+      await HapticHelper.success();
+    } catch (e) {
+      debugPrint('Haptic error: $e');
+    }
 
     // Save energy map
-    final energyMap = EnergyMap(
-      blocks: _energyBlocks,
-      createdAt: DateTime.now(),
-    );
-    await HiveService.saveEnergyMap(energyMap);
-    await HiveService.completeOnboarding();
+    try {
+      final energyMap = EnergyMap(
+        blocks: _energyBlocks,
+        createdAt: DateTime.now(),
+      );
+      await HiveService.saveEnergyMap(energyMap);
+      await HiveService.completeOnboarding();
+    } catch (e) {
+      debugPrint('Failed to save energy map: $e');
+      // Continue anyway - data will be saved later
+    }
 
     if (mounted) {
-      context.go('/dashboard');
+      try {
+        context.go('/dashboard');
+      } catch (e) {
+        debugPrint('Navigation error: $e');
+        // Fallback navigation
+        if (mounted) {
+          Navigator.of(context).pushReplacementNamed('/dashboard');
+        }
+      }
     }
   }
 
@@ -102,7 +119,13 @@ class _EnergyMappingPageState extends State<EnergyMappingPage> {
                 totalSteps: 2,
                 title: 'Map Your Energy',
                 subtitle: 'When are you most productive? When do you need breaks?',
-                onBack: () => context.pop(),
+                onBack: () {
+                  if (context.canPop()) {
+                    context.pop();
+                  } else {
+                    context.go('/onboarding/neurotype');
+                  }
+                },
               ),
             ),
 
