@@ -10,6 +10,7 @@ import '../../../../common/widgets/themed_button.dart';
 import '../../../../core/providers/task_providers.dart';
 import '../../../../core/providers/game_stats_providers.dart';
 import '../../../../core/providers/auth_providers.dart';
+import '../../../../core/services/ad_service.dart';
 import '../../../task/data/models/task.dart';
 
 /// Complete Dashboard Page
@@ -159,6 +160,15 @@ class _DashboardPageCompleteState
                         _buildEmptyState()
                       else
                         ...todayTasks.map((task) => _buildTaskCard(task)),
+
+                      const SizedBox(height: AppConstants.paddingL),
+                      
+                      // Ad Banner
+                      Container(
+                        margin: const EdgeInsets.symmetric(vertical: AppConstants.paddingM),
+                        alignment: Alignment.center,
+                        child: const BannerAdWidget(),
+                      ),
 
                       const SizedBox(height: AppConstants.paddingXL),
                     ]),

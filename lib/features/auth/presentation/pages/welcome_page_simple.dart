@@ -20,11 +20,7 @@ class WelcomePageSimple extends StatelessWidget {
                 color: const Color(0xFF00C4B4),
                 borderRadius: BorderRadius.circular(30),
               ),
-              child: const Icon(
-                Icons.check,
-                size: 60,
-                color: Colors.white,
-              ),
+              child: const Icon(Icons.check, size: 60, color: Colors.white),
             ),
             const SizedBox(height: 24),
             const Text(
@@ -38,10 +34,7 @@ class WelcomePageSimple extends StatelessWidget {
             const SizedBox(height: 8),
             const Text(
               'Low Friction, High Reward',
-              style: TextStyle(
-                fontSize: 16,
-                color: Color(0xFF6B7280),
-              ),
+              style: TextStyle(fontSize: 16, color: Color(0xFF6B7280)),
             ),
             const SizedBox(height: 48),
             ElevatedButton(
@@ -51,7 +44,10 @@ class WelcomePageSimple extends StatelessWidget {
               style: ElevatedButton.styleFrom(
                 backgroundColor: const Color(0xFF00C4B4),
                 foregroundColor: Colors.white,
-                padding: const EdgeInsets.symmetric(horizontal: 48, vertical: 16),
+                padding: const EdgeInsets.symmetric(
+                  horizontal: 48,
+                  vertical: 16,
+                ),
                 shape: RoundedRectangleBorder(
                   borderRadius: BorderRadius.circular(16),
                 ),
@@ -61,10 +57,37 @@ class WelcomePageSimple extends StatelessWidget {
                 style: TextStyle(fontSize: 16, fontWeight: FontWeight.bold),
               ),
             ),
+            const SizedBox(height: 16),
+            Row(
+              mainAxisAlignment: MainAxisAlignment.center,
+              children: [
+                TextButton(
+                  onPressed: () {
+                    context.push('/login');
+                  },
+                  child: const Text(
+                    'Sign In',
+                    style: TextStyle(fontSize: 14, color: Color(0xFF00C4B4)),
+                  ),
+                ),
+                const Text(
+                  ' | ',
+                  style: TextStyle(fontSize: 14, color: Color(0xFF6B7280)),
+                ),
+                TextButton(
+                  onPressed: () {
+                    context.push('/signup');
+                  },
+                  child: const Text(
+                    'Sign Up',
+                    style: TextStyle(fontSize: 14, color: Color(0xFF00C4B4)),
+                  ),
+                ),
+              ],
+            ),
           ],
         ),
       ),
     );
   }
 }
-

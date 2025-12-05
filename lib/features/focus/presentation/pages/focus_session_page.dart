@@ -27,7 +27,7 @@ class _FocusSessionPageState extends ConsumerState<FocusSessionPage>
   Timer? _timer;
   int _secondsRemaining = 25 * 60; // 25 minutes default
   bool _isRunning = false;
-  bool _isBreak = false;
+  final bool _isBreak = false;
   late AnimationController _pulseController;
 
   @override
@@ -132,8 +132,9 @@ class _FocusSessionPageState extends ConsumerState<FocusSessionPage>
 
   @override
   Widget build(BuildContext context) {
-    final task =
-        ref.watch(tasksProvider).firstWhere((t) => t.id == widget.taskId);
+    final task = ref
+        .watch(tasksProvider)
+        .firstWhere((t) => t.id == widget.taskId);
 
     return Scaffold(
       backgroundColor: AppColors.backgroundLight,
@@ -183,10 +184,7 @@ class _FocusSessionPageState extends ConsumerState<FocusSessionPage>
                       child: Column(
                         crossAxisAlignment: CrossAxisAlignment.start,
                         children: [
-                          Text(
-                            task.title,
-                            style: AppTextStyles.titleMedium,
-                          ),
+                          Text(task.title, style: AppTextStyles.titleMedium),
                           if (task.description != null)
                             Text(
                               task.description!,
@@ -217,8 +215,9 @@ class _FocusSessionPageState extends ConsumerState<FocusSessionPage>
                       boxShadow: [
                         BoxShadow(
                           color: _isRunning
-                              ? AppColors.primary
-                                  .withOpacity(0.3 * _pulseController.value)
+                              ? AppColors.primary.withOpacity(
+                                  0.3 * _pulseController.value,
+                                )
                               : Colors.transparent,
                           blurRadius: 40,
                           spreadRadius: 20,
@@ -254,7 +253,7 @@ class _FocusSessionPageState extends ConsumerState<FocusSessionPage>
                                     ? AppColors.primary
                                     : AppColors.textMedium,
                                 fontFeatures: const [
-                                  FontFeature.tabularFigures()
+                                  FontFeature.tabularFigures(),
                                 ],
                               ),
                             ),
@@ -290,14 +289,17 @@ class _FocusSessionPageState extends ConsumerState<FocusSessionPage>
                     width: 80,
                     height: 80,
                     decoration: BoxDecoration(
-                      color: _isRunning ? AppColors.warningOrange : AppColors.primary,
+                      color: _isRunning
+                          ? AppColors.warningOrange
+                          : AppColors.primary,
                       shape: BoxShape.circle,
                       boxShadow: [
                         BoxShadow(
-                          color: (_isRunning
-                                  ? AppColors.warningOrange
-                                  : AppColors.primary)
-                              .withOpacity(0.4),
+                          color:
+                              (_isRunning
+                                      ? AppColors.warningOrange
+                                      : AppColors.primary)
+                                  .withOpacity(0.4),
                           blurRadius: 20,
                           offset: const Offset(0, 10),
                         ),
@@ -306,7 +308,9 @@ class _FocusSessionPageState extends ConsumerState<FocusSessionPage>
                     child: IconButton(
                       onPressed: _isRunning ? _pauseTimer : _startTimer,
                       icon: Icon(
-                        _isRunning ? Icons.pause_rounded : Icons.play_arrow_rounded,
+                        _isRunning
+                            ? Icons.pause_rounded
+                            : Icons.play_arrow_rounded,
                         size: 40,
                         color: Colors.white,
                       ),
@@ -326,8 +330,10 @@ class _FocusSessionPageState extends ConsumerState<FocusSessionPage>
                 ),
                 child: Row(
                   children: [
-                    const Icon(Icons.lightbulb_outline_rounded,
-                        color: AppColors.accentYellow),
+                    const Icon(
+                      Icons.lightbulb_outline_rounded,
+                      color: AppColors.accentYellow,
+                    ),
                     const SizedBox(width: AppConstants.paddingS),
                     Expanded(
                       child: Text(
@@ -352,8 +358,7 @@ class _FocusSessionPageState extends ConsumerState<FocusSessionPage>
       context: context,
       builder: (context) => AlertDialog(
         title: const Text('Exit Focus Session?'),
-        content: const Text(
-            'Your progress won\'t be saved if you leave now.'),
+        content: const Text('Your progress won\'t be saved if you leave now.'),
         actions: [
           TextButton(
             onPressed: () => Navigator.pop(context),
@@ -364,9 +369,7 @@ class _FocusSessionPageState extends ConsumerState<FocusSessionPage>
               Navigator.pop(context);
               context.go('/dashboard');
             },
-            style: TextButton.styleFrom(
-              foregroundColor: AppColors.errorRed,
-            ),
+            style: TextButton.styleFrom(foregroundColor: AppColors.errorRed),
             child: const Text('Leave'),
           ),
         ],
@@ -374,4 +377,3 @@ class _FocusSessionPageState extends ConsumerState<FocusSessionPage>
     );
   }
 }
-

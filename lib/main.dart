@@ -6,6 +6,8 @@ import 'common/routes/app_router.dart';
 import 'common/utils/constants.dart';
 import 'common/utils/hive_service.dart';
 import 'core/services/firebase_service.dart';
+import 'core/services/ad_service.dart';
+import 'core/services/payment_service.dart';
 
 /// NeuroSpark Main Entry Point
 void main() async {
@@ -35,6 +37,20 @@ void main() async {
     debugPrint('📱 App will run without local storage');
   }
   
+  // Initialize AdMob (non-blocking)
+  try {
+    await AdService.initialize();
+  } catch (e) {
+    debugPrint('⚠️ AdMob initialization failed: $e');
+  }
+  
+  // Initialize In-App Purchases (non-blocking)
+  try {
+    await PaymentService.initialize();
+  } catch (e) {
+    debugPrint('⚠️ Payment service initialization failed: $e');
+  }
+  
   // Set preferred orientations
   await SystemChrome.setPreferredOrientations([
     DeviceOrientation.portraitUp,
@@ -57,11 +73,11 @@ void main() async {
 }
 
 /// NeuroSpark App Root Widget
-class NeuroSparkApp extends StatelessWidget {
+class NeuroSparkApp extends ConsumerWidget {
   const NeuroSparkApp({super.key});
 
   @override
-  Widget build(BuildContext context) {
+  Widget build(BuildContext context, WidgetRef ref) {
     return MaterialApp.router(
       title: AppConstants.appName,
       debugShowCheckedModeBanner: false,

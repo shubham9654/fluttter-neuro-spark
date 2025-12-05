@@ -116,6 +116,34 @@ class WelcomePage extends ConsumerWidget {
                       
                       const SizedBox(height: AppConstants.paddingM),
                       
+                      // Email/Password login button
+                      ThemedSecondaryButton(
+                        text: 'Sign in with Email',
+                        onPressed: () {
+                          context.push('/login');
+                        },
+                        isExpanded: true,
+                        icon: Icons.email_outlined,
+                      ),
+                      
+                      const SizedBox(height: AppConstants.paddingS),
+                      
+                      // Sign up link
+                      TextButton(
+                        onPressed: () {
+                          context.push('/signup');
+                        },
+                        child: Text(
+                          'Create Account',
+                          style: AppTextStyles.bodyMedium.copyWith(
+                            color: AppColors.primary,
+                            fontWeight: FontWeight.w600,
+                          ),
+                        ),
+                      ),
+                      
+                      const SizedBox(height: AppConstants.paddingM),
+                      
                       // Divider
                       const Row(
                         children: [

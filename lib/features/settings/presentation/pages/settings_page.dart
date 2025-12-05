@@ -162,7 +162,9 @@ class _SettingsPageState extends ConsumerState<SettingsPage> {
                                   vertical: 4,
                                 ),
                                 decoration: BoxDecoration(
-                                  color: AppColors.accentPurple.withOpacity(0.1),
+                                  color: AppColors.accentPurple.withOpacity(
+                                    0.1,
+                                  ),
                                   borderRadius: BorderRadius.circular(12),
                                 ),
                                 child: Row(
@@ -205,10 +207,7 @@ class _SettingsPageState extends ConsumerState<SettingsPage> {
                   const SizedBox(height: AppConstants.paddingXL),
 
                   // Stats Section
-                  Text(
-                    'Your Stats',
-                    style: AppTextStyles.titleLarge,
-                  ),
+                  Text('Your Stats', style: AppTextStyles.titleLarge),
                   const SizedBox(height: AppConstants.paddingM),
                   Row(
                     children: [
@@ -257,10 +256,7 @@ class _SettingsPageState extends ConsumerState<SettingsPage> {
                   const SizedBox(height: AppConstants.paddingXL),
 
                   // App Settings
-                  Text(
-                    'App Settings',
-                    style: AppTextStyles.titleLarge,
-                  ),
+                  Text('App Settings', style: AppTextStyles.titleLarge),
                   const SizedBox(height: AppConstants.paddingM),
                   Container(
                     decoration: BoxDecoration(
@@ -299,13 +295,16 @@ class _SettingsPageState extends ConsumerState<SettingsPage> {
                           onChanged: (value) async {
                             if (value) {
                               // Request permission
-                              final granted = await notificationService.requestPermissions();
+                              final granted = await notificationService
+                                  .requestPermissions();
                               if (granted) {
                                 setState(() => _notifications = true);
                                 if (context.mounted) {
                                   ScaffoldMessenger.of(context).showSnackBar(
                                     const SnackBar(
-                                      content: Text('Notifications enabled! 🔔'),
+                                      content: Text(
+                                        'Notifications enabled! 🔔',
+                                      ),
                                       backgroundColor: AppColors.successGreen,
                                     ),
                                   );
@@ -321,13 +320,15 @@ class _SettingsPageState extends ConsumerState<SettingsPage> {
                                       ),
                                       actions: [
                                         TextButton(
-                                          onPressed: () => Navigator.pop(context),
+                                          onPressed: () =>
+                                              Navigator.pop(context),
                                           child: const Text('Cancel'),
                                         ),
                                         TextButton(
                                           onPressed: () {
                                             Navigator.pop(context);
-                                            notificationService.openNotificationSettings();
+                                            notificationService
+                                                .openNotificationSettings();
                                           },
                                           child: const Text('Open Settings'),
                                         ),
@@ -338,7 +339,8 @@ class _SettingsPageState extends ConsumerState<SettingsPage> {
                               }
                             } else {
                               setState(() => _notifications = false);
-                              await notificationService.cancelAllNotifications();
+                              await notificationService
+                                  .cancelAllNotifications();
                             }
                           },
                         ),
@@ -368,11 +370,81 @@ class _SettingsPageState extends ConsumerState<SettingsPage> {
 
                   const SizedBox(height: AppConstants.paddingXL),
 
-                  // More Options
-                  Text(
-                    'More',
-                    style: AppTextStyles.titleLarge,
+                  // Premium & Subscription
+                  Container(
+                    padding: const EdgeInsets.all(AppConstants.paddingL),
+                    decoration: BoxDecoration(
+                      gradient: LinearGradient(
+                        colors: [AppColors.primary, AppColors.primaryDark],
+                      ),
+                      borderRadius: BorderRadius.circular(20),
+                      boxShadow: [
+                        BoxShadow(
+                          color: AppColors.primaryShadow,
+                          blurRadius: 20,
+                          offset: const Offset(0, 10),
+                        ),
+                      ],
+                    ),
+                    child: Column(
+                      crossAxisAlignment: CrossAxisAlignment.start,
+                      children: [
+                        Row(
+                          children: [
+                            const Icon(
+                              Icons.star_rounded,
+                              color: Colors.white,
+                              size: 28,
+                            ),
+                            const SizedBox(width: 12),
+                            Text(
+                              'Premium',
+                              style: AppTextStyles.titleLarge.copyWith(
+                                color: Colors.white,
+                                fontWeight: FontWeight.bold,
+                              ),
+                            ),
+                          ],
+                        ),
+                        const SizedBox(height: AppConstants.paddingM),
+                        Text(
+                          'Unlock premium features, remove ads, and support NeuroSpark',
+                          style: AppTextStyles.bodyMedium.copyWith(
+                            color: Colors.white.withOpacity(0.9),
+                          ),
+                        ),
+                        const SizedBox(height: AppConstants.paddingL),
+                        SizedBox(
+                          width: double.infinity,
+                          child: ElevatedButton(
+                            onPressed: () {
+                              context.push('/settings/subscription');
+                            },
+                            style: ElevatedButton.styleFrom(
+                              backgroundColor: Colors.white,
+                              foregroundColor: AppColors.primary,
+                              padding: const EdgeInsets.symmetric(vertical: 16),
+                              shape: RoundedRectangleBorder(
+                                borderRadius: BorderRadius.circular(12),
+                              ),
+                            ),
+                            child: const Text(
+                              'View Plans',
+                              style: TextStyle(
+                                fontSize: 16,
+                                fontWeight: FontWeight.bold,
+                              ),
+                            ),
+                          ),
+                        ),
+                      ],
+                    ),
                   ),
+
+                  const SizedBox(height: AppConstants.paddingXL),
+
+                  // More Options
+                  Text('More', style: AppTextStyles.titleLarge),
                   const SizedBox(height: AppConstants.paddingM),
                   Container(
                     decoration: BoxDecoration(
@@ -394,9 +466,7 @@ class _SettingsPageState extends ConsumerState<SettingsPage> {
                           subtitle: 'Colors & appearance',
                           onTap: () {
                             ScaffoldMessenger.of(context).showSnackBar(
-                              const SnackBar(
-                                content: Text('Coming soon!'),
-                              ),
+                              const SnackBar(content: Text('Coming soon!')),
                             );
                           },
                         ),
@@ -407,9 +477,7 @@ class _SettingsPageState extends ConsumerState<SettingsPage> {
                           subtitle: 'English (US)',
                           onTap: () {
                             ScaffoldMessenger.of(context).showSnackBar(
-                              const SnackBar(
-                                content: Text('Coming soon!'),
-                              ),
+                              const SnackBar(content: Text('Coming soon!')),
                             );
                           },
                         ),
@@ -477,7 +545,8 @@ class _SettingsPageState extends ConsumerState<SettingsPage> {
                           builder: (context) => AlertDialog(
                             title: const Text('Sign Out'),
                             content: const Text(
-                                'Are you sure you want to sign out?'),
+                              'Are you sure you want to sign out?',
+                            ),
                             actions: [
                               TextButton(
                                 onPressed: () => Navigator.pop(context, false),
@@ -501,7 +570,9 @@ class _SettingsPageState extends ConsumerState<SettingsPage> {
                       style: OutlinedButton.styleFrom(
                         padding: const EdgeInsets.symmetric(vertical: 16),
                         side: const BorderSide(
-                            color: AppColors.errorRed, width: 2),
+                          color: AppColors.errorRed,
+                          width: 2,
+                        ),
                         shape: RoundedRectangleBorder(
                           borderRadius: BorderRadius.circular(12),
                         ),
@@ -604,19 +675,15 @@ class _SettingsPageState extends ConsumerState<SettingsPage> {
       ),
       title: Text(
         title,
-        style: AppTextStyles.bodyLarge.copyWith(
-          fontWeight: FontWeight.w600,
-        ),
+        style: AppTextStyles.bodyLarge.copyWith(fontWeight: FontWeight.w600),
       ),
       subtitle: Text(
         subtitle,
-        style: AppTextStyles.bodySmall.copyWith(
-          color: AppColors.textLight,
-        ),
+        style: AppTextStyles.bodySmall.copyWith(color: AppColors.textLight),
       ),
       value: value,
       onChanged: onChanged,
-      activeColor: AppColors.primary,
+      activeThumbColor: AppColors.primary,
     );
   }
 
@@ -638,15 +705,11 @@ class _SettingsPageState extends ConsumerState<SettingsPage> {
       ),
       title: Text(
         title,
-        style: AppTextStyles.bodyLarge.copyWith(
-          fontWeight: FontWeight.w600,
-        ),
+        style: AppTextStyles.bodyLarge.copyWith(fontWeight: FontWeight.w600),
       ),
       subtitle: Text(
         subtitle,
-        style: AppTextStyles.bodySmall.copyWith(
-          color: AppColors.textLight,
-        ),
+        style: AppTextStyles.bodySmall.copyWith(color: AppColors.textLight),
       ),
       trailing: const Icon(
         Icons.chevron_right_rounded,
@@ -655,4 +718,3 @@ class _SettingsPageState extends ConsumerState<SettingsPage> {
     );
   }
 }
-

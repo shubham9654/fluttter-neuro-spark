@@ -7,6 +7,7 @@ import '../../../../common/theme/text_styles.dart';
 import '../../../../common/utils/constants.dart';
 import '../../../../common/utils/haptic_helper.dart';
 import '../../../../core/providers/task_providers.dart';
+import '../../../../core/services/speech_service.dart';
 import '../../data/models/task.dart';
 
 /// Brain Dump Page (Updated with Riverpod)
@@ -22,11 +23,31 @@ class BrainDumpPageUpdated extends ConsumerStatefulWidget {
 class _BrainDumpPageUpdatedState extends ConsumerState<BrainDumpPageUpdated> {
   final _textController = TextEditingController();
   final _focusNode = FocusNode();
+  final _speechService = SpeechService();
+  bool _isListening = false;
+  bool _isInitializing = false;
+
+  @override
+  void initState() {
+    super.initState();
+    _initializeSpeech();
+  }
+
+  Future<void> _initializeSpeech() async {
+    setState(() {
+      _isInitializing = true;
+    });
+    await _speechService.initialize();
+    setState(() {
+      _isInitializing = false;
+    });
+  }
 
   @override
   void dispose() {
     _textController.dispose();
     _focusNode.dispose();
+    _speechService.dispose();
     super.dispose();
   }
 
@@ -45,6 +66,57 @@ class _BrainDumpPageUpdatedState extends ConsumerState<BrainDumpPageUpdated> {
         duration: Duration(seconds: 1),
       ),
     );
+  }
+
+  Future<void> _toggleListening() async {
+    if (_isListening) {
+      await _speechService.stopListening();
+      setState(() {
+        _isListening = false;
+      });
+      HapticHelper.lightImpact();
+    } else {
+      // Stop any existing listening
+      await _speechService.stopListening();
+      
+      HapticHelper.mediumImpact();
+      
+      final started = await _speechService.startListening(
+        onResult: (text) {
+          setState(() {
+            _textController.text = text;
+          });
+        },
+        onDone: () {
+          setState(() {
+            _isListening = false;
+          });
+          HapticHelper.lightImpact();
+        },
+      );
+
+      if (started) {
+        setState(() {
+          _isListening = true;
+        });
+        ScaffoldMessenger.of(context).showSnackBar(
+          const SnackBar(
+            content: Text('Listening...'),
+            duration: Duration(seconds: 1),
+          ),
+        );
+      } else {
+        if (mounted) {
+          ScaffoldMessenger.of(context).showSnackBar(
+            const SnackBar(
+              content: Text('Speech recognition not available. Please check microphone permissions.'),
+              backgroundColor: AppColors.errorRed,
+              duration: Duration(seconds: 3),
+            ),
+          );
+        }
+      }
+    }
   }
 
   void _moveToToday(Task task) {
@@ -105,23 +177,56 @@ class _BrainDumpPageUpdatedState extends ConsumerState<BrainDumpPageUpdated> {
                       controller: _textController,
                       focusNode: _focusNode,
                       decoration: InputDecoration(
-                        hintText: 'What\'s on your mind?',
+                        hintText: _isListening ? 'Listening...' : 'What\'s on your mind?',
                         border: OutlineInputBorder(
                           borderRadius: BorderRadius.circular(12),
-                          borderSide: const BorderSide(
-                            color: AppColors.borderLight,
+                          borderSide: BorderSide(
+                            color: _isListening 
+                                ? AppColors.primary 
+                                : AppColors.borderLight,
+                            width: _isListening ? 2 : 1,
                           ),
                         ),
                         filled: true,
-                        fillColor: AppColors.backgroundLight,
-                        prefixIcon: const Icon(
+                        fillColor: _isListening 
+                            ? AppColors.primary.withOpacity(0.05)
+                            : AppColors.backgroundLight,
+                        prefixIcon: Icon(
                           FontAwesomeIcons.brain,
                           size: 20,
-                          color: AppColors.primary,
+                          color: _isListening 
+                              ? AppColors.primary 
+                              : AppColors.primary,
                         ),
+                        suffixIcon: _isInitializing
+                            ? const Padding(
+                                padding: EdgeInsets.all(12),
+                                child: SizedBox(
+                                  width: 20,
+                                  height: 20,
+                                  child: CircularProgressIndicator(
+                                    strokeWidth: 2,
+                                  ),
+                                ),
+                              )
+                            : IconButton(
+                                icon: Icon(
+                                  _isListening 
+                                      ? Icons.mic_rounded 
+                                      : Icons.mic_none_rounded,
+                                  color: _isListening 
+                                      ? AppColors.errorRed 
+                                      : AppColors.textMedium,
+                                ),
+                                onPressed: _toggleListening,
+                                tooltip: _isListening 
+                                    ? 'Stop listening' 
+                                    : 'Start voice input',
+                              ),
                       ),
                       onSubmitted: (_) => _addTask(),
                       textInputAction: TextInputAction.done,
+                      enabled: !_isListening,
                     ),
                   ),
                   const SizedBox(width: AppConstants.paddingS),

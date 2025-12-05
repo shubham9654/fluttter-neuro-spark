@@ -1,10 +1,15 @@
 import 'package:flutter/material.dart';
 import 'package:go_router/go_router.dart';
+import 'package:firebase_auth/firebase_auth.dart';
 
 // Import pages as they are created
 // Auth
 import 'package:neuro_spark/features/auth/presentation/pages/welcome_page.dart';
 import 'package:neuro_spark/features/auth/presentation/pages/welcome_page_simple.dart';
+import 'package:neuro_spark/features/auth/presentation/pages/login_page.dart';
+import 'package:neuro_spark/features/auth/presentation/pages/signup_page.dart';
+import 'package:neuro_spark/features/auth/presentation/pages/auth_landing_page.dart';
+import 'go_router_refresh_stream.dart';
 // Onboarding
 import 'package:neuro_spark/features/onboarding/presentation/pages/neurotype_setup_page.dart';
 import 'package:neuro_spark/features/onboarding/presentation/pages/energy_mapping_page.dart';
@@ -26,6 +31,7 @@ import 'package:neuro_spark/features/settings/presentation/pages/settings_page.d
 import 'package:neuro_spark/features/settings/presentation/pages/edit_profile_page.dart';
 import 'package:neuro_spark/features/settings/presentation/pages/privacy_policy_page.dart';
 import 'package:neuro_spark/features/settings/presentation/pages/terms_of_service_page.dart';
+import 'package:neuro_spark/features/settings/presentation/pages/subscription_page.dart';
 import 'package:neuro_spark/common/widgets/main_scaffold.dart';
 
 /// NeuroSpark App Router
@@ -46,26 +52,80 @@ class AppRouter {
   static const String settingsSensory = '/settings/sensory';
 
   // GoRouter Configuration
-  static final GoRouter router = GoRouter(
-    initialLocation: welcome,
-    debugLogDiagnostics: true,
-    routes: [
-      // Auth Flow
-      GoRoute(
-        path: '/',
-        name: 'welcome',
-        pageBuilder: (context, state) => MaterialPage(
-          key: state.pageKey,
-          child: const WelcomePageSimple(), // Simple version for now
+  static GoRouter createRouter() {
+    return GoRouter(
+      initialLocation: '/',
+      debugLogDiagnostics: true,
+      redirect: (context, state) {
+        try {
+          // Check current user directly from Firebase Auth (more reliable than stream)
+          final currentUser = FirebaseAuth.instance.currentUser;
+          final isAuthenticated = currentUser != null;
+          
+          final isAuthRoute = state.matchedLocation == '/' ||
+              state.matchedLocation == '/login' ||
+              state.matchedLocation == '/signup';
+          
+          // If user is authenticated and trying to access auth pages, redirect to dashboard
+          if (isAuthenticated && isAuthRoute) {
+            return '/dashboard';
+          }
+          
+          // If user is not authenticated and trying to access protected pages, redirect to landing
+          if (!isAuthenticated && !isAuthRoute) {
+            return '/';
+          }
+        } catch (e) {
+          // If there's an error, allow navigation (for initial load or errors)
+          debugPrint('Auth redirect error: $e');
+        }
+        
+        return null; // No redirect needed
+      },
+      refreshListenable: GoRouterRefreshStream(FirebaseAuth.instance.authStateChanges()),
+      routes: [
+        // Auth Landing Page (First screen)
+        GoRoute(
+          path: '/',
+          name: 'auth_landing',
+          pageBuilder: (context, state) => MaterialPage(
+            key: state.pageKey,
+            child: const AuthLandingPage(),
+          ),
         ),
-      ),
-
+        
       // Welcome page as separate route for testing
       GoRoute(
         path: '/welcome',
+        name: 'welcome',
+        pageBuilder: (context, state) => MaterialPage(
+          key: state.pageKey,
+          child: const WelcomePageSimple(),
+        ),
+      ),
+
+      // Welcome page full version
+      GoRoute(
+        path: '/welcome-full',
         name: 'welcome_full',
         pageBuilder: (context, state) =>
             MaterialPage(key: state.pageKey, child: const WelcomePage()),
+      ),
+
+      // Login page
+      GoRoute(
+        path: '/login',
+        name: 'login',
+        pageBuilder: (context, state) =>
+            MaterialPage(key: state.pageKey, child: const LoginPage()),
+      ),
+
+      // Sign up page
+      GoRoute(
+        path: '/signup',
+        name: 'signup',
+        pageBuilder: (context, state) =>
+            MaterialPage(key: state.pageKey, child: const SignUpPage()),
       ),
 
       // Onboarding Flow
@@ -202,6 +262,15 @@ class AppRouter {
               child: const TermsOfServicePage(),
             ),
           ),
+          // Subscription
+          GoRoute(
+            path: 'subscription',
+            name: 'subscription',
+            pageBuilder: (context, state) => MaterialPage(
+              key: state.pageKey,
+              child: const SubscriptionPage(),
+            ),
+          ),
         ],
       ),
 
@@ -231,7 +300,7 @@ class AppRouter {
             ),
             const SizedBox(height: 16),
             ElevatedButton(
-              onPressed: () => router.go('/'),
+              onPressed: () => GoRouter.of(context).go('/'),
               child: const Text('Go Home'),
             ),
           ],
@@ -239,4 +308,8 @@ class AppRouter {
       ),
     ),
   );
+  }
+  
+  // Static router instance
+  static final GoRouter router = createRouter();
 }
