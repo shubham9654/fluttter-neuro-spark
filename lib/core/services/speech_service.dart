@@ -238,14 +238,23 @@ class SpeechService {
         _isListening = listeningResult ?? false;
       }
 
+      // Don't show error if we're on web and status callback will set _isListening
+      // Give it more time to initialize, especially on mobile
       if (!_isListening) {
-        debugPrint(
-          'Failed to start listening - speech recognition returned false or null',
-        );
-        if (kIsWeb) {
+        // Wait a bit more for status callback to fire
+        await Future.delayed(const Duration(milliseconds: 800));
+        
+        // Only show error if still not listening after waiting
+        if (!_isListening) {
           debugPrint(
-            'On web: Make sure microphone permission is granted in browser settings',
+            'Speech recognition may still be initializing. Status will update when ready.',
           );
+          // Don't return false immediately - let status callback handle it
+          // Return true optimistically if we got past the initial checks
+          if (listeningResult != false) {
+            // If it didn't explicitly return false, assume it's starting
+            return true;
+          }
         }
         _isStarting = false;
       }

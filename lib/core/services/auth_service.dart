@@ -1,6 +1,7 @@
 import 'package:firebase_auth/firebase_auth.dart';
 import 'package:google_sign_in/google_sign_in.dart';
 import 'package:flutter/foundation.dart';
+import 'package:flutter/services.dart';
 import 'firestore_service.dart';
 
 /// Authentication service for Firebase Auth operations
@@ -72,11 +73,21 @@ class AuthService {
       // Trigger the authentication flow
       final GoogleSignInAccount? googleUser = await _googleSignIn.signIn();
 
-      if (googleUser == null) return null;
+      // User cancelled the sign-in
+      if (googleUser == null) {
+        debugPrint('Google Sign-In cancelled by user');
+        return null;
+      }
 
       // Obtain the auth details from the request
       final GoogleSignInAuthentication googleAuth =
           await googleUser.authentication;
+
+      // Check if we have the required tokens
+      if (googleAuth.accessToken == null || googleAuth.idToken == null) {
+        debugPrint('Error: Missing Google authentication tokens');
+        throw Exception('Failed to get Google authentication tokens');
+      }
 
       // Create a new credential
       final credential = GoogleAuthProvider.credential(
@@ -87,15 +98,34 @@ class AuthService {
       // Sign in to Firebase with the Google credential
       final userCredential = await _auth.signInWithCredential(credential);
       
-      // Save user data to Firestore
+      // Save user data to Firestore (non-blocking)
       if (userCredential.user != null) {
-        await _saveUserData(userCredential.user!);
+        _saveUserData(userCredential.user!).catchError((e) {
+          debugPrint('Background save user data failed: $e');
+        });
       }
       
+      debugPrint('✅ Google Sign-In successful: ${userCredential.user?.email}');
       return userCredential;
+    } on PlatformException catch (e) {
+      // Handle ApiException: 10 (SHA-1 not configured)
+      if (e.code == 'sign_in_failed' && 
+          e.message != null && 
+          e.message!.contains('ApiException: 10')) {
+        debugPrint('❌ Google Sign-In Error: SHA-1 fingerprint not configured');
+        throw Exception(
+          'Google Sign-In not configured. Please add SHA-1 fingerprint to Firebase Console.\n'
+          'See docs/FIX_GOOGLE_SIGNIN_ANDROID.md for instructions.'
+        );
+      }
+      debugPrint('❌ Platform Exception during Google Sign-In: ${e.code} - ${e.message}');
+      rethrow;
+    } on FirebaseAuthException catch (e) {
+      debugPrint('❌ Firebase Auth Error during Google Sign-In: ${e.code} - ${e.message}');
+      rethrow;
     } catch (e) {
-      print('Error signing in with Google: $e');
-      return null;
+      debugPrint('❌ Error signing in with Google: $e');
+      rethrow;
     }
   }
 

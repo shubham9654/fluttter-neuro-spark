@@ -1,4 +1,5 @@
 import 'package:flutter/material.dart';
+import 'package:flutter/services.dart';
 import 'package:go_router/go_router.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:firebase_auth/firebase_auth.dart';
@@ -347,11 +348,58 @@ class _LoginPageState extends ConsumerState<LoginPage> {
                       onPressed: _isLoading
                           ? null
                           : () async {
-                              final authService = ref.read(authServiceProvider);
-                              final result = await authService
-                                  .signInWithGoogle();
-                              if (mounted && result != null) {
-                                context.go('/dashboard');
+                              setState(() {
+                                _isLoading = true;
+                                _errorMessage = null;
+                              });
+
+                              try {
+                                final authService = ref.read(authServiceProvider);
+                                final result = await authService.signInWithGoogle();
+                                
+                                if (mounted) {
+                                  if (result != null && result.user != null) {
+                                    // Wait a bit for auth state to update, then navigate
+                                    await Future.delayed(const Duration(milliseconds: 300));
+                                    if (mounted) {
+                                      context.go('/dashboard');
+                                    }
+                                  } else {
+                                    setState(() {
+                                      _errorMessage = 'Google Sign-In was cancelled';
+                                      _isLoading = false;
+                                    });
+                                  }
+                                }
+                              } on FirebaseAuthException catch (e) {
+                                if (mounted) {
+                                  String errorMsg = 'Failed to sign in with Google. Please try again.';
+                                  switch (e.code) {
+                                    case 'account-exists-with-different-credential':
+                                      errorMsg = 'An account already exists with this email. Please sign in with your password.';
+                                      break;
+                                    case 'invalid-credential':
+                                      errorMsg = 'Invalid credentials. Please try again.';
+                                      break;
+                                    case 'network-request-failed':
+                                      errorMsg = 'Network error. Please check your connection and try again.';
+                                      break;
+                                    default:
+                                      errorMsg = e.message ?? 'Failed to sign in with Google. Please try again.';
+                                  }
+                                  setState(() {
+                                    _errorMessage = errorMsg;
+                                    _isLoading = false;
+                                  });
+                                }
+                              } catch (e) {
+                                if (mounted) {
+                                  debugPrint('Google Sign-In error: $e');
+                                  setState(() {
+                                    _errorMessage = 'An unexpected error occurred. Please try again.';
+                                    _isLoading = false;
+                                  });
+                                }
                               }
                             },
                       icon: const Icon(Icons.g_mobiledata, size: 24),

@@ -45,11 +45,13 @@ rules_version = '2';
 service cloud.firestore {
   match /databases/{database}/documents {
     match /{document=**} {
-      allow read, write: if request.time < timestamp.date(2025, 2, 1);
+      allow read, write: if request.time < timestamp.date(2026, 1, 5);
     }
   }
 }
 ```
+
+**Important**: These test rules allow full access until January 5, 2026. Update to production rules before that date!
 
 5. Click **"Enable"**
 

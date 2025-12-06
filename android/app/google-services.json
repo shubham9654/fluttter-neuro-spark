@@ -1,0 +1,47 @@
+{
+  "project_info": {
+    "project_number": "773865468608",
+    "project_id": "neurospark-cf205",
+    "storage_bucket": "neurospark-cf205.firebasestorage.app"
+  },
+  "client": [
+    {
+      "client_info": {
+        "mobilesdk_app_id": "1:773865468608:android:b995068c1d8a3d1cdb3325",
+        "android_client_info": {
+          "package_name": "neurspack.stark"
+        }
+      },
+      "oauth_client": [
+        {
+          "client_id": "773865468608-2ss91brhe5mau5c6oej04elhm2s0ihkg.apps.googleusercontent.com",
+          "client_type": 1,
+          "android_info": {
+            "package_name": "neurspack.stark",
+            "certificate_hash": "25f866e5cfd7303a0f040969704aca8cec92d0a8"
+          }
+        },
+        {
+          "client_id": "773865468608-19m3nv2ki5sk90nmr7kbh4t2tjba9a8k.apps.googleusercontent.com",
+          "client_type": 3
+        }
+      ],
+      "api_key": [
+        {
+          "current_key": "AIzaSyBHzAF_zs3a23bRi9ezThq_kaoTDY3rce8"
+        }
+      ],
+      "services": {
+        "appinvite_service": {
+          "other_platform_oauth_client": [
+            {
+              "client_id": "773865468608-19m3nv2ki5sk90nmr7kbh4t2tjba9a8k.apps.googleusercontent.com",
+              "client_type": 3
+            }
+          ]
+        }
+      }
+    }
+  ],
+  "configuration_version": "1"
+}

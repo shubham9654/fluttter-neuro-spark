@@ -1,4 +1,5 @@
 import 'package:flutter/material.dart';
+import 'package:flutter/services.dart';
 import 'package:go_router/go_router.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:firebase_auth/firebase_auth.dart';
@@ -430,10 +431,72 @@ class _SignUpPageState extends ConsumerState<SignUpPage> {
                       onPressed: _isLoading
                           ? null
                           : () async {
-                              final authService = ref.read(authServiceProvider);
-                              final result = await authService.signInWithGoogle();
-                              if (mounted && result != null) {
-                                context.go('/dashboard');
+                              setState(() {
+                                _isLoading = true;
+                                _errorMessage = null;
+                              });
+
+                              try {
+                                final authService = ref.read(authServiceProvider);
+                                final result = await authService.signInWithGoogle();
+
+                                if (mounted) {
+                                  if (result != null && result.user != null) {
+                                    // Wait a bit for auth state to update
+                                    await Future.delayed(const Duration(milliseconds: 300));
+                                    if (mounted) {
+                                      context.go('/dashboard');
+                                    }
+                                  } else {
+                                    setState(() {
+                                      _errorMessage = 'Google Sign-In was cancelled';
+                                      _isLoading = false;
+                                    });
+                                  }
+                                }
+                              } on PlatformException catch (e) {
+                                if (mounted) {
+                                  debugPrint('Google Sign-In PlatformException: ${e.code} - ${e.message}');
+                                  String errorMsg = 'Google Sign-In failed. Please try again.';
+                                  
+                                  // Check for ApiException: 10 (SHA-1 not configured)
+                                  if (e.code == 'sign_in_failed' && 
+                                      e.message != null && 
+                                      e.message!.contains('ApiException: 10')) {
+                                    errorMsg = 'Google Sign-In not configured. Please add SHA-1 fingerprint to Firebase Console.\n\n'
+                                        'Run: cd android && gradlew signingReport\n'
+                                        'Then add SHA-1 to Firebase Console → Project Settings → Your Android App';
+                                  }
+                                  
+                                  setState(() {
+                                    _errorMessage = errorMsg;
+                                    _isLoading = false;
+                                  });
+                                  
+                                  // Show detailed error in snackbar
+                                  ScaffoldMessenger.of(context).showSnackBar(
+                                    SnackBar(
+                                      content: Text(errorMsg),
+                                      backgroundColor: AppColors.errorRed,
+                                      duration: const Duration(seconds: 5),
+                                    ),
+                                  );
+                                }
+                              } catch (e) {
+                                if (mounted) {
+                                  debugPrint('Google Sign-In error: $e');
+                                  String errorMsg = 'Google Sign-In failed. Please try again.';
+                                  
+                                  if (e.toString().contains('SHA-1') || 
+                                      e.toString().contains('ApiException: 10')) {
+                                    errorMsg = 'Google Sign-In not configured. Please add SHA-1 fingerprint to Firebase Console.';
+                                  }
+                                  
+                                  setState(() {
+                                    _errorMessage = errorMsg;
+                                    _isLoading = false;
+                                  });
+                                }
                               }
                             },
                       icon: const Icon(Icons.g_mobiledata, size: 24),

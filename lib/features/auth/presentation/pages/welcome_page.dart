@@ -1,4 +1,5 @@
 import 'package:flutter/material.dart';
+import 'package:flutter/services.dart';
 import 'package:font_awesome_flutter/font_awesome_flutter.dart';
 import 'package:go_router/go_router.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
@@ -177,9 +178,39 @@ class WelcomePage extends ConsumerWidget {
                               icon: FontAwesomeIcons.google,
                               label: 'Google',
                               onPressed: () async {
-                                final result = await authService.signInWithGoogle();
-                                if (context.mounted && result != null) {
-                                  context.go('/dashboard');
+                                try {
+                                  final result = await authService.signInWithGoogle();
+                                  if (context.mounted && result != null) {
+                                    await Future.delayed(const Duration(milliseconds: 300));
+                                    if (context.mounted) {
+                                      context.go('/dashboard');
+                                    }
+                                  }
+                                } on PlatformException catch (e) {
+                                  if (context.mounted) {
+                                    String errorMsg = 'Google Sign-In failed. Please try again.';
+                                    if (e.code == 'sign_in_failed' && 
+                                        e.message != null && 
+                                        e.message!.contains('ApiException: 10')) {
+                                      errorMsg = 'Google Sign-In not configured. Please add SHA-1 fingerprint to Firebase Console.';
+                                    }
+                                    ScaffoldMessenger.of(context).showSnackBar(
+                                      SnackBar(
+                                        content: Text(errorMsg),
+                                        backgroundColor: AppColors.errorRed,
+                                        duration: const Duration(seconds: 5),
+                                      ),
+                                    );
+                                  }
+                                } catch (e) {
+                                  if (context.mounted) {
+                                    ScaffoldMessenger.of(context).showSnackBar(
+                                      SnackBar(
+                                        content: Text('Google Sign-In failed: ${e.toString()}'),
+                                        backgroundColor: AppColors.errorRed,
+                                      ),
+                                    );
+                                  }
                                 }
                               },
                             ),

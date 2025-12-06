@@ -95,6 +95,8 @@ class _BrainDumpPageUpdatedState extends ConsumerState<BrainDumpPageUpdated> {
         },
       );
 
+      // Don't show error immediately - speech service may still be initializing
+      // The status callback will update _isListening when ready
       if (started) {
         setState(() {
           _isListening = true;
@@ -106,14 +108,21 @@ class _BrainDumpPageUpdatedState extends ConsumerState<BrainDumpPageUpdated> {
           ),
         );
       } else {
-        if (mounted) {
-          ScaffoldMessenger.of(context).showSnackBar(
-            const SnackBar(
-              content: Text('Speech recognition not available. Please check microphone permissions.'),
-              backgroundColor: AppColors.errorRed,
-              duration: Duration(seconds: 3),
-            ),
-          );
+        // Only show error if speech service explicitly says it's not available
+        // Wait a moment to see if status callback updates
+        await Future.delayed(const Duration(milliseconds: 1000));
+        if (mounted && !_isListening) {
+          // Check if speech service is actually available
+          if (!_speechService.isAvailable) {
+            ScaffoldMessenger.of(context).showSnackBar(
+              const SnackBar(
+                content: Text('Speech recognition not available. Please check microphone permissions.'),
+                backgroundColor: AppColors.errorRed,
+                duration: Duration(seconds: 3),
+              ),
+            );
+          }
+          // If it's available but just slow to start, don't show error
         }
       }
     }

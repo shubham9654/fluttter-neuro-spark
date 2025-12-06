@@ -8,6 +8,7 @@ import 'common/utils/hive_service.dart';
 import 'core/services/firebase_service.dart';
 import 'core/services/ad_service.dart';
 import 'core/services/payment_service.dart';
+import 'core/services/notification_service.dart';
 
 /// NeuroSpark Main Entry Point
 void main() async {
@@ -49,6 +50,13 @@ void main() async {
     await PaymentService.initialize();
   } catch (e) {
     debugPrint('⚠️ Payment service initialization failed: $e');
+  }
+
+  // Initialize Notifications (non-blocking)
+  try {
+    await NotificationService().initialize();
+  } catch (e) {
+    debugPrint('⚠️ Notification service initialization failed: $e');
   }
   
   // Set preferred orientations

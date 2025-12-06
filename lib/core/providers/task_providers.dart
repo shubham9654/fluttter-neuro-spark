@@ -5,6 +5,7 @@ import 'package:firebase_auth/firebase_auth.dart';
 import 'package:cloud_firestore/cloud_firestore.dart';
 import '../../features/task/data/models/task.dart';
 import '../services/firestore_service.dart';
+import '../services/notification_service.dart';
 
 /// State notifier for tasks
 class TasksNotifier extends Notifier<List<Task>> {
@@ -104,6 +105,13 @@ class TasksNotifier extends Notifier<List<Task>> {
     _saveTaskToFirestore(task).catchError((e) {
       debugPrint('Error saving task to Firestore: $e');
     });
+    // Send notification when task is created
+    NotificationService().notifyTaskCreated(
+      taskTitle: task.title,
+      taskId: task.id,
+    ).catchError((e) {
+      debugPrint('Error sending task creation notification: $e');
+    });
   }
 
   Future<void> _saveTaskToFirestore(Task task) async {
@@ -116,14 +124,31 @@ class TasksNotifier extends Notifier<List<Task>> {
   }
 
   void updateTask(Task task) {
+    final oldTask = state.firstWhere(
+      (t) => t.id == task.id,
+      orElse: () => task,
+    );
+    
     state = [
       for (final t in state)
         if (t.id == task.id) task else t,
     ];
+    
     // Update in Firestore (non-blocking)
     _updateTaskInFirestore(task).catchError((e) {
       debugPrint('Error updating task in Firestore: $e');
     });
+    
+    // Send notification when task is added to "today"
+    if (oldTask.status != TaskStatus.today && task.status == TaskStatus.today) {
+      NotificationService().sendNotification(
+        title: '📅 Task Added to Today',
+        body: task.title,
+        payload: task.id,
+      ).catchError((e) {
+        debugPrint('Error sending today notification: $e');
+      });
+    }
   }
 
   Future<void> _updateTaskInFirestore(Task task) async {

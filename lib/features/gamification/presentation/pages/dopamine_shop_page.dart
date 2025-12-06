@@ -6,6 +6,7 @@ import '../../../../common/theme/text_styles.dart';
 import '../../../../common/utils/constants.dart';
 import '../../../../common/utils/haptic_helper.dart';
 import '../../../../core/providers/game_stats_providers.dart';
+import 'package:go_router/go_router.dart';
 
 /// Dopamine Shop Page
 /// Reward store where users can spend coins
@@ -419,6 +420,14 @@ class DopamineShopPage extends ConsumerWidget {
   void _purchaseItem(BuildContext context, WidgetRef ref, ShopItem item) {
     HapticHelper.mediumImpact();
 
+    // Check if user has enough coins
+    final gameStats = ref.read(gameStatsProvider);
+    if (gameStats.coins < item.price) {
+      // Not enough coins - offer to buy coins via IAP
+      _showBuyCoinsDialog(context, ref, item.price - gameStats.coins);
+      return;
+    }
+
     showDialog(
       context: context,
       builder: (context) => AlertDialog(
@@ -455,20 +464,61 @@ class DopamineShopPage extends ConsumerWidget {
           ),
           ElevatedButton(
             onPressed: () {
-              // Purchase item
-              ref.read(gameStatsProvider.notifier).purchaseItem(item.id, item.price);
+              // Purchase item with coins
+              final gameStats = ref.read(gameStatsProvider);
+              if (gameStats.coins >= item.price) {
+                ref.read(gameStatsProvider.notifier).purchaseItem(
+                  item.id, 
+                  item.price,
+                  itemName: item.name,
+                );
 
-              Navigator.pop(context);
-              HapticHelper.heavyImpact();
+                Navigator.pop(context);
+                HapticHelper.heavyImpact();
 
-              ScaffoldMessenger.of(context).showSnackBar(
-                SnackBar(
-                  content: Text('${item.name} unlocked! 🎉'),
-                  backgroundColor: AppColors.successGreen,
-                ),
-              );
+                ScaffoldMessenger.of(context).showSnackBar(
+                  SnackBar(
+                    content: Text('${item.name} unlocked! 🎉'),
+                    backgroundColor: AppColors.successGreen,
+                  ),
+                );
+              } else {
+                Navigator.pop(context);
+                ScaffoldMessenger.of(context).showSnackBar(
+                  SnackBar(
+                    content: Text('Not enough coins. Need ${item.price}, have ${gameStats.coins}'),
+                    backgroundColor: AppColors.errorRed,
+                  ),
+                );
+              }
             },
             child: const Text('Purchase'),
+          ),
+        ],
+      ),
+    );
+  }
+  
+  void _showBuyCoinsDialog(BuildContext context, WidgetRef ref, int coinsNeeded) {
+    showDialog(
+      context: context,
+      builder: (context) => AlertDialog(
+        title: const Text('Not Enough Coins'),
+        content: Text(
+          'You need ${coinsNeeded} more coins. Would you like to buy coins?',
+        ),
+        actions: [
+          TextButton(
+            onPressed: () => Navigator.pop(context),
+            child: const Text('Cancel'),
+          ),
+          ElevatedButton(
+            onPressed: () {
+              Navigator.pop(context);
+              // Navigate to subscription page to buy coins
+              context.push('/settings/subscription');
+            },
+            child: const Text('Buy Coins'),
           ),
         ],
       ),

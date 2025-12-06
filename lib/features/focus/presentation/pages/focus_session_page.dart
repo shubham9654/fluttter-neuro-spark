@@ -10,6 +10,8 @@ import '../../../../common/utils/haptic_helper.dart';
 import '../../../../common/widgets/themed_button.dart';
 import '../../../../core/providers/task_providers.dart';
 import '../../../../core/providers/game_stats_providers.dart';
+import '../../../../core/services/notification_service.dart';
+import '../../../task/data/models/task.dart';
 
 /// Focus Session Page
 /// Pomodoro-style focus timer with ADHD-optimized features
@@ -29,6 +31,8 @@ class _FocusSessionPageState extends ConsumerState<FocusSessionPage>
   bool _isRunning = false;
   final bool _isBreak = false;
   late AnimationController _pulseController;
+  bool _nearEndNotificationSent = false;
+  bool _completionNotificationSent = false;
 
   @override
   void initState() {
@@ -47,17 +51,45 @@ class _FocusSessionPageState extends ConsumerState<FocusSessionPage>
   }
 
   void _startTimer() {
-    setState(() => _isRunning = true);
+    setState(() {
+      _isRunning = true;
+      _nearEndNotificationSent = false;
+      _completionNotificationSent = false;
+    });
     HapticHelper.mediumImpact();
 
     _timer = Timer.periodic(const Duration(seconds: 1), (timer) {
       setState(() {
         if (_secondsRemaining > 0) {
           _secondsRemaining--;
-        } else {
-          _onTimerComplete();
+          
+          // Send notification when 5 minutes remaining
+          if (_secondsRemaining <= 5 * 60 && !_nearEndNotificationSent) {
+            _nearEndNotificationSent = true;
+            _sendNearEndNotification();
+          }
+          
+          // Auto-complete if time ends and not marked
+          if (_secondsRemaining == 0) {
+            _onTimerComplete();
+          }
         }
       });
+    });
+  }
+  
+  void _sendNearEndNotification() {
+    final task = ref.read(tasksProvider).firstWhere(
+      (t) => t.id == widget.taskId,
+      orElse: () => throw Exception('Task not found'),
+    );
+    
+    NotificationService().sendNotification(
+      title: '⏰ Task Almost Complete!',
+      body: '${task.title} - 5 minutes remaining. Update your progress?',
+      payload: widget.taskId,
+    ).catchError((e) {
+      debugPrint('Error sending near-end notification: $e');
     });
   }
 
@@ -86,16 +118,79 @@ class _FocusSessionPageState extends ConsumerState<FocusSessionPage>
       final task = ref
           .read(tasksProvider)
           .firstWhere((t) => t.id == widget.taskId);
-      ref.read(tasksProvider.notifier).completeTask(task.id);
-      ref.read(gameStatsProvider.notifier).addFocusMinutes(25);
-      ref.read(gameStatsProvider.notifier).completeTask();
-
-      // Navigate to victory page
-      context.go('/focus/victory');
+      
+      // Check if task is already completed
+      if (task.status != TaskStatus.completed) {
+        // Ask user if they want to mark as complete
+        _showCompletionDialog(task);
+      } else {
+        // Already completed, just navigate
+        ref.read(gameStatsProvider.notifier).addFocusMinutes(25);
+        context.go('/focus/victory');
+      }
     } else {
       // Break completed
       _showBreakCompleteDialog();
     }
+  }
+  
+  void _showCompletionDialog(Task task) {
+    if (_completionNotificationSent) return;
+    _completionNotificationSent = true;
+    
+    // Send notification asking for update
+    NotificationService().sendNotification(
+      title: '✅ Task Time Complete!',
+      body: '${task.title} - Mark as complete?',
+      payload: widget.taskId,
+    ).catchError((e) {
+      debugPrint('Error sending completion notification: $e');
+    });
+    
+    // Show dialog
+    showDialog(
+      context: context,
+      barrierDismissible: false,
+      builder: (context) => AlertDialog(
+        title: const Text('Task Complete!'),
+        content: Text('Time is up for "${task.title}". Would you like to mark it as complete?'),
+        actions: [
+          TextButton(
+            onPressed: () {
+              Navigator.pop(context);
+              // Auto-complete after 30 seconds if no response
+              Future.delayed(const Duration(seconds: 30), () {
+                if (mounted) {
+                  final currentTask = ref.read(tasksProvider).firstWhere(
+                    (t) => t.id == widget.taskId,
+                    orElse: () => task,
+                  );
+                  if (currentTask.status != TaskStatus.completed) {
+                    ref.read(tasksProvider.notifier).completeTask(task.id);
+                    ref.read(gameStatsProvider.notifier).addFocusMinutes(25);
+                    ref.read(gameStatsProvider.notifier).completeTask();
+                    if (mounted) {
+                      context.go('/focus/victory');
+                    }
+                  }
+                }
+              });
+            },
+            child: const Text('Not Yet'),
+          ),
+          ElevatedButton(
+            onPressed: () {
+              Navigator.pop(context);
+              ref.read(tasksProvider.notifier).completeTask(task.id);
+              ref.read(gameStatsProvider.notifier).addFocusMinutes(25);
+              ref.read(gameStatsProvider.notifier).completeTask();
+              context.go('/focus/victory');
+            },
+            child: const Text('Mark Complete'),
+          ),
+        ],
+      ),
+    );
   }
 
   void _showBreakCompleteDialog() {

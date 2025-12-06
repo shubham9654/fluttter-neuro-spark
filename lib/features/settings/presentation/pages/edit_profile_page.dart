@@ -6,8 +6,12 @@ import '../../../../common/theme/app_colors.dart';
 import '../../../../common/theme/text_styles.dart';
 import '../../../../common/utils/constants.dart';
 import '../../../../common/utils/haptic_helper.dart';
+import 'package:flutter/foundation.dart';
+import 'package:cloud_firestore/cloud_firestore.dart';
+import 'package:firebase_auth/firebase_auth.dart';
 import '../../../../core/providers/auth_providers.dart';
 import '../../../../core/providers/game_stats_providers.dart';
+import '../../../../core/services/firestore_service.dart';
 
 /// Edit Profile Page
 /// User can edit their profile information and avatar
@@ -22,6 +26,8 @@ class _EditProfilePageState extends ConsumerState<EditProfilePage> {
   late TextEditingController _nameController;
   late TextEditingController _emailController;
   late TextEditingController _bioController;
+  bool _isSaving = false;
+  final _firestore = FirestoreService();
 
   @override
   void initState() {
@@ -30,6 +36,27 @@ class _EditProfilePageState extends ConsumerState<EditProfilePage> {
     _nameController = TextEditingController(text: user?.displayName ?? '');
     _emailController = TextEditingController(text: user?.email ?? '');
     _bioController = TextEditingController(text: '');
+    _loadUserProfile();
+  }
+  
+  Future<void> _loadUserProfile() async {
+    final user = FirebaseAuth.instance.currentUser;
+    if (user == null) return;
+    
+    try {
+      final firestore = FirebaseFirestore.instance;
+      final userDoc = await firestore.collection('users').doc(user.uid).get();
+      if (userDoc.exists) {
+        final data = userDoc.data();
+        if (data != null && mounted) {
+          setState(() {
+            _bioController.text = data['bio'] ?? '';
+          });
+        }
+      }
+    } catch (e) {
+      debugPrint('Error loading user profile: $e');
+    }
   }
 
   @override
@@ -55,24 +82,20 @@ class _EditProfilePageState extends ConsumerState<EditProfilePage> {
         title: const Text('Edit Profile'),
         actions: [
           TextButton(
-            onPressed: () {
-              HapticHelper.mediumImpact();
-              // Save profile logic
-              ScaffoldMessenger.of(context).showSnackBar(
-                const SnackBar(
-                  content: Text('Profile updated! 🎉'),
-                  backgroundColor: AppColors.successGreen,
-                ),
-              );
-              context.pop();
-            },
-            child: const Text(
-              'Save',
-              style: TextStyle(
-                fontWeight: FontWeight.bold,
-                fontSize: 16,
-              ),
-            ),
+            onPressed: _isSaving ? null : _saveProfile,
+            child: _isSaving
+                ? const SizedBox(
+                    width: 20,
+                    height: 20,
+                    child: CircularProgressIndicator(strokeWidth: 2),
+                  )
+                : const Text(
+                    'Save',
+                    style: TextStyle(
+                      fontWeight: FontWeight.bold,
+                      fontSize: 16,
+                    ),
+                  ),
           ),
         ],
       ),
@@ -371,6 +394,135 @@ class _EditProfilePageState extends ConsumerState<EditProfilePage> {
         ),
       ],
     );
+  }
+
+  Future<void> _saveProfile() async {
+    if (_isSaving) return;
+    
+    if (!mounted) return;
+    
+    setState(() {
+      _isSaving = true;
+    });
+    
+    HapticHelper.mediumImpact();
+    
+    try {
+      final user = FirebaseAuth.instance.currentUser;
+      if (user == null) {
+        throw Exception('User not authenticated');
+      }
+      
+      // Update display name in Firebase Auth
+      final newDisplayName = _nameController.text.trim();
+      if (newDisplayName.isNotEmpty && newDisplayName != user.displayName) {
+        try {
+          await user.updateDisplayName(newDisplayName);
+          await user.reload();
+          debugPrint('✅ Display name updated in Firebase Auth');
+        } catch (e) {
+          debugPrint('⚠️ Warning: Could not update display name in Auth: $e');
+          // Continue even if Auth update fails
+        }
+      }
+      
+      // Update profile data in Firestore
+      final updates = <String, dynamic>{
+        'displayName': newDisplayName,
+        'bio': _bioController.text.trim(),
+        'updatedAt': FieldValue.serverTimestamp(),
+      };
+      
+      bool firestoreSuccess = false;
+      try {
+        debugPrint('🔄 Attempting to save profile to Firestore...');
+        debugPrint('📍 User ID: ${user.uid}');
+        debugPrint('📍 Updates: ${updates.keys.join(", ")}');
+        
+        await _firestore.updateUserDocument(updates);
+        debugPrint('✅ Profile saved to Firestore successfully');
+        firestoreSuccess = true;
+      } catch (firestoreError) {
+        debugPrint('❌ Firestore update failed: $firestoreError');
+        
+        // Check if it's a permission error
+        final errorString = firestoreError.toString().toLowerCase();
+        if (errorString.contains('permission_denied') || 
+            errorString.contains('api has not been used') ||
+            errorString.contains('disabled')) {
+          // Firestore API not enabled - show helpful message
+          if (mounted) {
+            ScaffoldMessenger.of(context).showSnackBar(
+              SnackBar(
+                content: const Text('Profile name updated! Note: Firestore API needs to be enabled for full sync.'),
+                backgroundColor: AppColors.warningOrange,
+                duration: const Duration(seconds: 4),
+              ),
+            );
+          }
+        } else {
+          // Other Firestore error - show detailed error
+          debugPrint('⚠️ Firestore error details: $firestoreError');
+          if (mounted) {
+            ScaffoldMessenger.of(context).showSnackBar(
+              SnackBar(
+                content: Text('Firestore error: ${firestoreError.toString().substring(0, 100)}...'),
+                backgroundColor: AppColors.errorRed,
+                duration: const Duration(seconds: 5),
+              ),
+            );
+          }
+        }
+      }
+      
+      if (mounted) {
+        // Show success message
+        ScaffoldMessenger.of(context).showSnackBar(
+          SnackBar(
+            content: Text(firestoreSuccess 
+                ? 'Profile updated! 🎉' 
+                : 'Profile name updated! (Some features may need Firestore enabled)'),
+            backgroundColor: firestoreSuccess 
+                ? AppColors.successGreen 
+                : AppColors.warningOrange,
+            duration: const Duration(seconds: 2),
+          ),
+        );
+        
+        // Wait a moment before popping to show the success message
+        await Future.delayed(const Duration(milliseconds: 500));
+        
+        if (mounted) {
+          context.pop();
+        }
+      }
+    } catch (e) {
+      debugPrint('❌ Error saving profile: $e');
+      if (mounted) {
+        final errorString = e.toString().toLowerCase();
+        String errorMessage = 'Error updating profile: ${e.toString()}';
+        
+        if (errorString.contains('permission_denied') || 
+            errorString.contains('api has not been used') ||
+            errorString.contains('disabled')) {
+          errorMessage = 'Firestore API not enabled. Please enable it in Google Cloud Console.';
+        }
+        
+        ScaffoldMessenger.of(context).showSnackBar(
+          SnackBar(
+            content: Text(errorMessage),
+            backgroundColor: AppColors.errorRed,
+            duration: const Duration(seconds: 4),
+          ),
+        );
+      }
+    } finally {
+      if (mounted) {
+        setState(() {
+          _isSaving = false;
+        });
+      }
+    }
   }
 
   void _showDeleteAccountDialog(BuildContext context) {

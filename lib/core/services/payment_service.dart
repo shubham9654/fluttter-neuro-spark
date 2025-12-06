@@ -130,33 +130,35 @@ class PaymentService {
 
   /// Handle successful purchase
   static void _handleSuccessfulPurchase(PurchaseDetails purchaseDetails) {
-    // TODO: Implement your purchase handling logic here
-    // - Grant premium features
-    // - Add coins to user account
-    // - Remove ads
-    // - Update user subscription status in Firestore
+    // Import Firestore service to save purchase
+    // Note: This should be called from UI layer to access Riverpod providers
     
     switch (purchaseDetails.productID) {
       case premiumMonthly:
       case premiumYearly:
         // Grant premium subscription
-        debugPrint('✅ Premium subscription activated');
+        debugPrint('✅ Premium subscription activated: ${purchaseDetails.productID}');
+        // TODO: Save to Firestore - users/{uid}/subscription
         break;
       case removeAds:
         // Remove ads
         debugPrint('✅ Ads removed');
+        // TODO: Save to Firestore - users/{uid}/preferences/adsRemoved = true
         break;
       case coins100:
         // Add 100 coins
         debugPrint('✅ 100 coins added');
+        // TODO: Update game stats - add 100 coins
         break;
       case coins500:
         // Add 500 coins
         debugPrint('✅ 500 coins added');
+        // TODO: Update game stats - add 500 coins
         break;
       case coins1000:
         // Add 1000 coins
         debugPrint('✅ 1000 coins added');
+        // TODO: Update game stats - add 1000 coins
         break;
     }
   }
