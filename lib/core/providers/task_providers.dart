@@ -201,20 +201,49 @@ final tasksProvider = NotifierProvider<TasksNotifier, List<Task>>(() {
   return TasksNotifier();
 });
 
+/// Helper function to get priority order (higher number = higher priority)
+int _getPriorityOrder(TaskPriority priority) {
+  switch (priority) {
+    case TaskPriority.urgent:
+      return 4;
+    case TaskPriority.high:
+      return 3;
+    case TaskPriority.medium:
+      return 2;
+    case TaskPriority.low:
+      return 1;
+  }
+}
+
+/// Helper function to sort tasks by priority and date
+List<Task> _sortTasks(List<Task> tasks) {
+  return List.from(tasks)
+    ..sort((a, b) {
+      // First sort by priority (urgent > high > medium > low)
+      final priorityDiff = _getPriorityOrder(b.priority) - _getPriorityOrder(a.priority);
+      if (priorityDiff != 0) return priorityDiff;
+      
+      // Then sort by creation date (newest first)
+      return b.createdAt.compareTo(a.createdAt);
+    });
+}
+
 /// Provider for today's tasks
 final todayTasksProvider = Provider<List<Task>>((ref) {
-  return ref
+  final tasks = ref
       .watch(tasksProvider)
       .where((t) => t.status == TaskStatus.today)
       .toList();
+  return _sortTasks(tasks);
 });
 
 /// Provider for inbox tasks
 final inboxTasksProvider = Provider<List<Task>>((ref) {
-  return ref
+  final tasks = ref
       .watch(tasksProvider)
       .where((t) => t.status == TaskStatus.inbox)
       .toList();
+  return _sortTasks(tasks);
 });
 
 /// Provider for creating new task

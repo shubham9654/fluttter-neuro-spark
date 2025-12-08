@@ -9,7 +9,7 @@ import '../../../../common/utils/haptic_helper.dart';
 import 'package:flutter/foundation.dart';
 import 'package:cloud_firestore/cloud_firestore.dart';
 import 'package:firebase_auth/firebase_auth.dart';
-import '../../../../core/providers/auth_providers.dart';
+import '../../../../core/providers/auth_providers.dart' show currentUserProvider, refreshCurrentUser;
 import '../../../../core/providers/game_stats_providers.dart';
 import '../../../../core/services/firestore_service.dart';
 
@@ -420,6 +420,12 @@ class _EditProfilePageState extends ConsumerState<EditProfilePage> {
           await user.updateDisplayName(newDisplayName);
           await user.reload();
           debugPrint('✅ Display name updated in Firebase Auth');
+          
+          // Refresh the provider to show updated user data
+          if (mounted) {
+            // Trigger provider refresh to show updated user data
+            refreshCurrentUser(ref);
+          }
         } catch (e) {
           debugPrint('⚠️ Warning: Could not update display name in Auth: $e');
           // Continue even if Auth update fails
