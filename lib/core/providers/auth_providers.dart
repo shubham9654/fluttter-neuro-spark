@@ -1,4 +1,5 @@
 import 'package:firebase_auth/firebase_auth.dart';
+import 'package:cloud_firestore/cloud_firestore.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import '../services/auth_service.dart';
 
@@ -48,4 +49,16 @@ final currentUserProvider = Provider<User?>((ref) {
 void refreshCurrentUser(WidgetRef ref) {
   ref.read(_userRefreshTriggerProvider.notifier).refresh();
 }
+
+/// Stream of the current user's Firestore profile document (reactive).
+final userProfileProvider =
+    StreamProvider<Map<String, dynamic>?>((ref) {
+  final user = ref.watch(currentUserProvider);
+  if (user == null) return const Stream.empty();
+  return FirebaseFirestore.instance
+      .collection('users')
+      .doc(user.uid)
+      .snapshots()
+      .map((doc) => doc.data());
+});
 

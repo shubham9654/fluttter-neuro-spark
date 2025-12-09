@@ -15,7 +15,15 @@ class ProfilePage extends ConsumerWidget {
   @override
   Widget build(BuildContext context, WidgetRef ref) {
     final user = ref.watch(currentUserProvider);
+    final userProfileAsync = ref.watch(userProfileProvider);
     final gameStats = ref.watch(gameStatsProvider);
+    final profileData = userProfileAsync.maybeWhen(
+      data: (data) => data,
+      orElse: () => null,
+    );
+    final displayName =
+        profileData?['displayName'] ?? user?.displayName ?? 'NeuroSpark User';
+    final email = profileData?['email'] ?? user?.email;
     final authService = ref.watch(authServiceProvider);
 
     return Scaffold(
@@ -80,15 +88,15 @@ class ProfilePage extends ConsumerWidget {
                       const SizedBox(height: 12),
                       // Name
                       Text(
-                        user?.displayName ?? 'NeuroSpark User',
+                        displayName,
                         style: AppTextStyles.titleLarge.copyWith(
                           color: Colors.white,
                           fontWeight: FontWeight.bold,
                         ),
                       ),
-                      if (user?.email != null)
+                      if (email != null)
                         Text(
-                          user!.email!,
+                          email!,
                           style: AppTextStyles.bodySmall.copyWith(
                             color: Colors.white.withOpacity(0.9),
                           ),
