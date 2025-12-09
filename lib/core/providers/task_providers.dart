@@ -1,3 +1,5 @@
+import 'dart:async';
+
 import 'package:flutter/foundation.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:uuid/uuid.dart';
@@ -10,34 +12,49 @@ import '../services/notification_service.dart';
 /// State notifier for tasks
 class TasksNotifier extends Notifier<List<Task>> {
   final _firestore = FirestoreService();
+  StreamSubscription<QuerySnapshot>? _tasksSub;
+  StreamSubscription<User?>? _authSub;
 
   @override
   List<Task> build() {
-    // Load tasks from Firestore when provider is created
-    _loadTasksFromFirestore();
-
-    // Listen to real-time updates from Firestore
-    final user = FirebaseAuth.instance.currentUser;
-    if (user != null) {
-      _firestore
-          .watchTasks()
-          .listen((snapshot) {
-            try {
-              final tasks = snapshot.docs.map((doc) {
-                final data = doc.data() as Map<String, dynamic>;
-                return _taskFromMap({'id': doc.id, ...data});
-              }).toList();
-              state = tasks;
-            } catch (e) {
-              debugPrint('Error processing Firestore task updates: $e');
-            }
-          })
-          .onError((error) {
-            debugPrint('Error listening to Firestore tasks: $error');
-          });
-    }
-
+    _initialize();
     return [];
+  }
+
+  void _initialize() {
+    // React to auth changes to isolate tasks per user
+    _authSub ??= FirebaseAuth.instance.authStateChanges().listen((user) {
+      _restartForUser(user);
+    });
+    ref.onDispose(() {
+      _tasksSub?.cancel();
+      _authSub?.cancel();
+    });
+
+    // Start for current user on first build
+    _restartForUser(FirebaseAuth.instance.currentUser);
+  }
+
+  Future<void> _restartForUser(User? user) async {
+    await _tasksSub?.cancel();
+    _tasksSub = null;
+    state = [];
+    if (user == null) return;
+
+    await _loadTasksFromFirestore();
+    _tasksSub = _firestore.watchTasks().listen((snapshot) {
+      try {
+        final tasks = snapshot.docs.map((doc) {
+          final data = doc.data() as Map<String, dynamic>;
+          return _taskFromMap({'id': doc.id, ...data});
+        }).toList();
+        state = tasks;
+      } catch (e) {
+        debugPrint('Error processing Firestore task updates: $e');
+      }
+    }, onError: (error) {
+      debugPrint('Error listening to Firestore tasks: $error');
+    });
   }
 
   /// Load tasks from Firestore

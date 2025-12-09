@@ -123,396 +123,388 @@ class _SignUpPageState extends ConsumerState<SignUpPage> {
 
           // Content
           SafeArea(
-            child: SingleChildScrollView(
-              padding: const EdgeInsets.all(AppConstants.paddingL),
-              child: Form(
-                key: _formKey,
-                child: Column(
-                  crossAxisAlignment: CrossAxisAlignment.stretch,
-                  children: [
-                    const SizedBox(height: 40),
-
-                    // Back button
-                    Align(
-                      alignment: Alignment.topLeft,
-                      child: IconButton(
-                        icon: const Icon(Icons.arrow_back_rounded),
-                        color: AppColors.textDark,
-                        onPressed: () => context.pop(),
-                      ),
-                    ),
-
-                    const SizedBox(height: 20),
-
-                    // Title
-                    Text(
-                      'Create Account',
-                      style: AppTextStyles.displayMedium.copyWith(
-                        color: AppColors.textDark,
-                        fontWeight: FontWeight.bold,
-                      ),
-                      textAlign: TextAlign.center,
-                    ),
-
-                    const SizedBox(height: AppConstants.paddingS),
-
-                    // Subtitle
-                    Text(
-                      'Join NeuroSpark and start your journey',
-                      style: AppTextStyles.bodyLarge.copyWith(
-                        color: AppColors.textMedium,
-                      ),
-                      textAlign: TextAlign.center,
-                    ),
-
-                    const SizedBox(height: AppConstants.paddingXL),
-
-                    // Name field
-                    TextFormField(
-                      controller: _nameController,
-                      keyboardType: TextInputType.name,
-                      textInputAction: TextInputAction.next,
-                      textCapitalization: TextCapitalization.words,
-                      decoration: InputDecoration(
-                        labelText: 'Full Name',
-                        hintText: 'Enter your name',
-                        prefixIcon: const Icon(Icons.person_outlined),
-                        border: OutlineInputBorder(
-                          borderRadius: BorderRadius.circular(12),
-                        ),
-                        filled: true,
-                        fillColor: Colors.white,
-                      ),
-                      validator: (value) {
-                        if (value == null || value.isEmpty) {
-                          return 'Please enter your name';
-                        }
-                        if (value.length < 2) {
-                          return 'Name must be at least 2 characters';
-                        }
-                        return null;
-                      },
-                    ),
-
-                    const SizedBox(height: AppConstants.paddingM),
-
-                    // Email field
-                    TextFormField(
-                      controller: _emailController,
-                      keyboardType: TextInputType.emailAddress,
-                      textInputAction: TextInputAction.next,
-                      decoration: InputDecoration(
-                        labelText: 'Email',
-                        hintText: 'Enter your email',
-                        prefixIcon: const Icon(Icons.email_outlined),
-                        border: OutlineInputBorder(
-                          borderRadius: BorderRadius.circular(12),
-                        ),
-                        filled: true,
-                        fillColor: Colors.white,
-                      ),
-                      validator: (value) {
-                        if (value == null || value.isEmpty) {
-                          return 'Please enter your email';
-                        }
-                        if (!value.contains('@') || !value.contains('.')) {
-                          return 'Please enter a valid email';
-                        }
-                        return null;
-                      },
-                    ),
-
-                    const SizedBox(height: AppConstants.paddingM),
-
-                    // Password field
-                    TextFormField(
-                      controller: _passwordController,
-                      obscureText: _obscurePassword,
-                      textInputAction: TextInputAction.done,
-                      onFieldSubmitted: (_) => _handleSignUp(),
-                      decoration: InputDecoration(
-                        labelText: 'Password',
-                        hintText: 'Create a password',
-                        prefixIcon: const Icon(Icons.lock_outlined),
-                        suffixIcon: IconButton(
-                          icon: Icon(
-                            _obscurePassword
-                                ? Icons.visibility_outlined
-                                : Icons.visibility_off_outlined,
+            child: Center(
+              child: SingleChildScrollView(
+                padding: const EdgeInsets.all(AppConstants.paddingL),
+                child: ConstrainedBox(
+                  constraints: const BoxConstraints(maxWidth: 420),
+                  child: Form(
+                    key: _formKey,
+                    child: Column(
+                      crossAxisAlignment: CrossAxisAlignment.stretch,
+                      mainAxisAlignment: MainAxisAlignment.center,
+                      children: [
+                        // Title
+                        Text(
+                          'Create Account',
+                          style: AppTextStyles.displayMedium.copyWith(
+                            color: AppColors.textDark,
+                            fontWeight: FontWeight.bold,
                           ),
-                          onPressed: () {
-                            setState(() {
-                              _obscurePassword = !_obscurePassword;
-                            });
+                          textAlign: TextAlign.center,
+                        ),
+
+                        const SizedBox(height: AppConstants.paddingS),
+
+                        // Subtitle
+                        Text(
+                          'Join NeuroSpark and start your journey',
+                          style: AppTextStyles.bodyLarge.copyWith(
+                            color: AppColors.textMedium,
+                          ),
+                          textAlign: TextAlign.center,
+                        ),
+
+                        const SizedBox(height: AppConstants.paddingXL),
+
+                        // Name field
+                        TextFormField(
+                          controller: _nameController,
+                          keyboardType: TextInputType.name,
+                          textInputAction: TextInputAction.next,
+                          textCapitalization: TextCapitalization.words,
+                          decoration: InputDecoration(
+                            labelText: 'Full Name',
+                            hintText: 'Enter your name',
+                            prefixIcon: const Icon(Icons.person_outlined),
+                            border: OutlineInputBorder(
+                              borderRadius: BorderRadius.circular(12),
+                            ),
+                            filled: true,
+                            fillColor: Colors.white,
+                          ),
+                          validator: (value) {
+                            if (value == null || value.isEmpty) {
+                              return 'Please enter your name';
+                            }
+                            if (value.length < 2) {
+                              return 'Name must be at least 2 characters';
+                            }
+                            return null;
                           },
                         ),
-                        border: OutlineInputBorder(
-                          borderRadius: BorderRadius.circular(12),
-                        ),
-                        filled: true,
-                        fillColor: Colors.white,
-                      ),
-                      validator: (value) {
-                        if (value == null || value.isEmpty) {
-                          return 'Please enter a password';
-                        }
-                        if (value.length < 6) {
-                          return 'Password must be at least 6 characters';
-                        }
-                        return null;
-                      },
-                    ),
 
-                    const SizedBox(height: AppConstants.paddingM),
+                        const SizedBox(height: AppConstants.paddingM),
 
-                    // Terms and conditions checkbox
-                    Container(
-                      padding: const EdgeInsets.symmetric(
-                        vertical: AppConstants.paddingS,
-                        horizontal: AppConstants.paddingS,
-                      ),
-                      decoration: BoxDecoration(
-                        color: _agreeToTerms
-                            ? AppColors.primary.withOpacity(0.05)
-                            : Colors.transparent,
-                        borderRadius: BorderRadius.circular(8),
-                        border: Border.all(
-                          color: _agreeToTerms
-                              ? AppColors.primary
-                              : AppColors.borderLight,
-                          width: 1,
-                        ),
-                      ),
-                      child: Row(
-                        children: [
-                          Checkbox(
-                            value: _agreeToTerms,
-                            onChanged: (value) {
-                              setState(() {
-                                _agreeToTerms = value ?? false;
-                                if (_agreeToTerms) {
-                                  _errorMessage = null;
-                                }
-                              });
-                            },
-                            activeColor: AppColors.primary,
+                        // Email field
+                        TextFormField(
+                          controller: _emailController,
+                          keyboardType: TextInputType.emailAddress,
+                          textInputAction: TextInputAction.next,
+                          decoration: InputDecoration(
+                            labelText: 'Email',
+                            hintText: 'Enter your email',
+                            prefixIcon: const Icon(Icons.email_outlined),
+                            border: OutlineInputBorder(
+                              borderRadius: BorderRadius.circular(12),
+                            ),
+                            filled: true,
+                            fillColor: Colors.white,
                           ),
-                          Expanded(
-                            child: GestureDetector(
-                              onTap: () {
+                          validator: (value) {
+                            if (value == null || value.isEmpty) {
+                              return 'Please enter your email';
+                            }
+                            if (!value.contains('@') || !value.contains('.')) {
+                              return 'Please enter a valid email';
+                            }
+                            return null;
+                          },
+                        ),
+
+                        const SizedBox(height: AppConstants.paddingM),
+
+                        // Password field
+                        TextFormField(
+                          controller: _passwordController,
+                          obscureText: _obscurePassword,
+                          textInputAction: TextInputAction.done,
+                          onFieldSubmitted: (_) => _handleSignUp(),
+                          decoration: InputDecoration(
+                            labelText: 'Password',
+                            hintText: 'Create a password',
+                            prefixIcon: const Icon(Icons.lock_outlined),
+                            suffixIcon: IconButton(
+                              icon: Icon(
+                                _obscurePassword
+                                    ? Icons.visibility_outlined
+                                    : Icons.visibility_off_outlined,
+                              ),
+                              onPressed: () {
                                 setState(() {
-                                  _agreeToTerms = !_agreeToTerms;
-                                  if (_agreeToTerms) {
-                                    _errorMessage = null;
-                                  }
+                                  _obscurePassword = !_obscurePassword;
                                 });
                               },
-                              child: RichText(
-                                text: TextSpan(
-                                  style: AppTextStyles.bodySmall.copyWith(
-                                    color: AppColors.textMedium,
-                                  ),
-                                  children: [
-                                    const TextSpan(text: 'I agree to the '),
-                                    TextSpan(
-                                      text: 'Terms & Privacy Policy',
+                            ),
+                            border: OutlineInputBorder(
+                              borderRadius: BorderRadius.circular(12),
+                            ),
+                            filled: true,
+                            fillColor: Colors.white,
+                          ),
+                          validator: (value) {
+                            if (value == null || value.isEmpty) {
+                              return 'Please enter a password';
+                            }
+                            if (value.length < 6) {
+                              return 'Password must be at least 6 characters';
+                            }
+                            return null;
+                          },
+                        ),
+
+                        const SizedBox(height: AppConstants.paddingM),
+
+                        // Terms and conditions checkbox
+                        Container(
+                          padding: const EdgeInsets.symmetric(
+                            vertical: AppConstants.paddingS,
+                            horizontal: AppConstants.paddingS,
+                          ),
+                          decoration: BoxDecoration(
+                            color: _agreeToTerms
+                                ? AppColors.primary.withOpacity(0.05)
+                                : Colors.transparent,
+                            borderRadius: BorderRadius.circular(8),
+                            border: Border.all(
+                              color: _agreeToTerms
+                                  ? AppColors.primary
+                                  : AppColors.borderLight,
+                              width: 1,
+                            ),
+                          ),
+                          child: Row(
+                            children: [
+                              Checkbox(
+                                value: _agreeToTerms,
+                                onChanged: (value) {
+                                  setState(() {
+                                    _agreeToTerms = value ?? false;
+                                    if (_agreeToTerms) {
+                                      _errorMessage = null;
+                                    }
+                                  });
+                                },
+                                activeColor: AppColors.primary,
+                              ),
+                              Expanded(
+                                child: GestureDetector(
+                                  onTap: () {
+                                    setState(() {
+                                      _agreeToTerms = !_agreeToTerms;
+                                      if (_agreeToTerms) {
+                                        _errorMessage = null;
+                                      }
+                                    });
+                                  },
+                                  child: RichText(
+                                    text: TextSpan(
                                       style: AppTextStyles.bodySmall.copyWith(
-                                        color: AppColors.primary,
-                                        fontWeight: FontWeight.bold,
-                                        decoration: TextDecoration.underline,
+                                        color: AppColors.textMedium,
                                       ),
+                                      children: [
+                                        const TextSpan(text: 'I agree to the '),
+                                        TextSpan(
+                                          text: 'Terms & Privacy Policy',
+                                          style: AppTextStyles.bodySmall.copyWith(
+                                            color: AppColors.primary,
+                                            fontWeight: FontWeight.bold,
+                                            decoration: TextDecoration.underline,
+                                          ),
+                                        ),
+                                      ],
                                     ),
-                                  ],
+                                  ),
                                 ),
                               ),
+                            ],
+                          ),
+                        ),
+
+                        // Error message
+                        if (_errorMessage != null) ...[
+                          const SizedBox(height: AppConstants.paddingS),
+                          Container(
+                            padding: const EdgeInsets.all(12),
+                            decoration: BoxDecoration(
+                              color: AppColors.errorRed.withOpacity(0.1),
+                              borderRadius: BorderRadius.circular(8),
+                              border: Border.all(color: AppColors.errorRed),
+                            ),
+                            child: Row(
+                              children: [
+                                const Icon(
+                                  Icons.error_outline,
+                                  color: AppColors.errorRed,
+                                  size: 20,
+                                ),
+                                const SizedBox(width: 8),
+                                Expanded(
+                                  child: Text(
+                                    _errorMessage!,
+                                    style: AppTextStyles.bodySmall.copyWith(
+                                      color: AppColors.errorRed,
+                                    ),
+                                  ),
+                                ),
+                              ],
                             ),
                           ),
                         ],
-                      ),
-                    ),
 
-                    // Error message
-                    if (_errorMessage != null) ...[
-                      const SizedBox(height: AppConstants.paddingS),
-                      Container(
-                        padding: const EdgeInsets.all(12),
-                        decoration: BoxDecoration(
-                          color: AppColors.errorRed.withOpacity(0.1),
-                          borderRadius: BorderRadius.circular(8),
-                          border: Border.all(color: AppColors.errorRed),
+                        const SizedBox(height: AppConstants.paddingL),
+
+                        // Sign up button
+                        ThemedPrimaryButton(
+                          text: 'Create Account',
+                          onPressed: _handleSignUp,
+                          isExpanded: true,
+                          isLoading: _isLoading,
+                          icon: Icons.person_add_rounded,
                         ),
-                        child: Row(
+
+                        const SizedBox(height: AppConstants.paddingM),
+
+                        // Sign in link
+                        Row(
+                          mainAxisAlignment: MainAxisAlignment.center,
                           children: [
-                            const Icon(
-                              Icons.error_outline,
-                              color: AppColors.errorRed,
-                              size: 20,
+                            Text(
+                              'Already have an account? ',
+                              style: AppTextStyles.bodyMedium.copyWith(
+                                color: AppColors.textMedium,
+                              ),
                             ),
-                            const SizedBox(width: 8),
-                            Expanded(
+                            TextButton(
+                              onPressed: () {
+                                context.pop();
+                                context.push('/login');
+                              },
                               child: Text(
-                                _errorMessage!,
-                                style: AppTextStyles.bodySmall.copyWith(
-                                  color: AppColors.errorRed,
+                                'Sign In',
+                                style: AppTextStyles.bodyMedium.copyWith(
+                                  color: AppColors.primary,
+                                  fontWeight: FontWeight.bold,
                                 ),
                               ),
                             ),
                           ],
                         ),
-                      ),
-                    ],
 
-                    const SizedBox(height: AppConstants.paddingL),
+                        const SizedBox(height: AppConstants.paddingL),
 
-                    // Sign up button
-                    ThemedPrimaryButton(
-                      text: 'Create Account',
-                      onPressed: _handleSignUp,
-                      isExpanded: true,
-                      isLoading: _isLoading,
-                      icon: Icons.person_add_rounded,
-                    ),
-
-                    const SizedBox(height: AppConstants.paddingM),
-
-                    // Sign in link
-                    Row(
-                      mainAxisAlignment: MainAxisAlignment.center,
-                      children: [
-                        Text(
-                          'Already have an account? ',
-                          style: AppTextStyles.bodyMedium.copyWith(
-                            color: AppColors.textMedium,
-                          ),
-                        ),
-                        TextButton(
-                          onPressed: () {
-                            context.pop();
-                            context.push('/login');
-                          },
-                          child: Text(
-                            'Sign In',
-                            style: AppTextStyles.bodyMedium.copyWith(
-                              color: AppColors.primary,
-                              fontWeight: FontWeight.bold,
+                        // Divider
+                        const Row(
+                          children: [
+                            Expanded(child: Divider(color: AppColors.borderLight)),
+                            Padding(
+                              padding: EdgeInsets.symmetric(
+                                horizontal: AppConstants.paddingM,
+                              ),
+                              child: Text(
+                                'OR',
+                                style: TextStyle(
+                                  fontSize: 12,
+                                  fontWeight: FontWeight.w600,
+                                  color: AppColors.textLight,
+                                ),
+                              ),
                             ),
-                          ),
+                            Expanded(child: Divider(color: AppColors.borderLight)),
+                          ],
                         ),
-                      ],
-                    ),
 
-                    const SizedBox(height: AppConstants.paddingL),
+                        const SizedBox(height: AppConstants.paddingM),
 
-                    // Divider
-                    const Row(
-                      children: [
-                        Expanded(child: Divider(color: AppColors.borderLight)),
-                        Padding(
-                          padding: EdgeInsets.symmetric(
-                            horizontal: AppConstants.paddingM,
-                          ),
-                          child: Text(
-                            'OR',
-                            style: TextStyle(
-                              fontSize: 12,
-                              fontWeight: FontWeight.w600,
-                              color: AppColors.textLight,
-                            ),
-                          ),
-                        ),
-                        Expanded(child: Divider(color: AppColors.borderLight)),
-                      ],
-                    ),
+                        // Google Sign Up
+                        OutlinedButton.icon(
+                          onPressed: _isLoading
+                              ? null
+                              : () async {
+                                  setState(() {
+                                    _isLoading = true;
+                                    _errorMessage = null;
+                                  });
 
-                    const SizedBox(height: AppConstants.paddingM),
+                                  try {
+                                    final authService = ref.read(authServiceProvider);
+                                    final result = await authService.signInWithGoogle();
 
-                    // Google Sign Up
-                    OutlinedButton.icon(
-                      onPressed: _isLoading
-                          ? null
-                          : () async {
-                              setState(() {
-                                _isLoading = true;
-                                _errorMessage = null;
-                              });
-
-                              try {
-                                final authService = ref.read(authServiceProvider);
-                                final result = await authService.signInWithGoogle();
-
-                                if (mounted) {
-                                  if (result != null && result.user != null) {
-                                    // Wait a bit for auth state to update
-                                    await Future.delayed(const Duration(milliseconds: 300));
                                     if (mounted) {
-                                      context.go('/dashboard');
+                                      if (result != null && result.user != null) {
+                                        // Wait a bit for auth state to update
+                                        await Future.delayed(const Duration(milliseconds: 300));
+                                        if (mounted) {
+                                          context.go('/dashboard');
+                                        }
+                                      } else {
+                                        setState(() {
+                                          _errorMessage = 'Google Sign-In was cancelled';
+                                          _isLoading = false;
+                                        });
+                                      }
                                     }
-                                  } else {
-                                    setState(() {
-                                      _errorMessage = 'Google Sign-In was cancelled';
-                                      _isLoading = false;
-                                    });
+                                  } on PlatformException catch (e) {
+                                    if (mounted) {
+                                      debugPrint('Google Sign-In PlatformException: ${e.code} - ${e.message}');
+                                      String errorMsg = 'Google Sign-In failed. Please try again.';
+                                      
+                                      // Check for ApiException: 10 (SHA-1 not configured)
+                                      if (e.code == 'sign_in_failed' && 
+                                          e.message != null && 
+                                          e.message!.contains('ApiException: 10')) {
+                                        errorMsg = 'Google Sign-In not configured. Please add SHA-1 fingerprint to Firebase Console.\n\n'
+                                            'Run: cd android && gradlew signingReport\n'
+                                            'Then add SHA-1 to Firebase Console → Project Settings → Your Android App';
+                                      }
+                                      
+                                      setState(() {
+                                        _errorMessage = errorMsg;
+                                        _isLoading = false;
+                                      });
+                                      
+                                      // Show detailed error in snackbar
+                                      ScaffoldMessenger.of(context).showSnackBar(
+                                        SnackBar(
+                                          content: Text(errorMsg),
+                                          backgroundColor: AppColors.errorRed,
+                                          duration: const Duration(seconds: 5),
+                                        ),
+                                      );
+                                    }
+                                  } catch (e) {
+                                    if (mounted) {
+                                      debugPrint('Google Sign-In error: $e');
+                                      String errorMsg = 'Google Sign-In failed. Please try again.';
+                                      
+                                      if (e.toString().contains('SHA-1') || 
+                                          e.toString().contains('ApiException: 10')) {
+                                        errorMsg = 'Google Sign-In not configured. Please add SHA-1 fingerprint to Firebase Console.';
+                                      }
+                                      
+                                      setState(() {
+                                        _errorMessage = errorMsg;
+                                        _isLoading = false;
+                                      });
+                                    }
                                   }
-                                }
-                              } on PlatformException catch (e) {
-                                if (mounted) {
-                                  debugPrint('Google Sign-In PlatformException: ${e.code} - ${e.message}');
-                                  String errorMsg = 'Google Sign-In failed. Please try again.';
-                                  
-                                  // Check for ApiException: 10 (SHA-1 not configured)
-                                  if (e.code == 'sign_in_failed' && 
-                                      e.message != null && 
-                                      e.message!.contains('ApiException: 10')) {
-                                    errorMsg = 'Google Sign-In not configured. Please add SHA-1 fingerprint to Firebase Console.\n\n'
-                                        'Run: cd android && gradlew signingReport\n'
-                                        'Then add SHA-1 to Firebase Console → Project Settings → Your Android App';
-                                  }
-                                  
-                                  setState(() {
-                                    _errorMessage = errorMsg;
-                                    _isLoading = false;
-                                  });
-                                  
-                                  // Show detailed error in snackbar
-                                  ScaffoldMessenger.of(context).showSnackBar(
-                                    SnackBar(
-                                      content: Text(errorMsg),
-                                      backgroundColor: AppColors.errorRed,
-                                      duration: const Duration(seconds: 5),
-                                    ),
-                                  );
-                                }
-                              } catch (e) {
-                                if (mounted) {
-                                  debugPrint('Google Sign-In error: $e');
-                                  String errorMsg = 'Google Sign-In failed. Please try again.';
-                                  
-                                  if (e.toString().contains('SHA-1') || 
-                                      e.toString().contains('ApiException: 10')) {
-                                    errorMsg = 'Google Sign-In not configured. Please add SHA-1 fingerprint to Firebase Console.';
-                                  }
-                                  
-                                  setState(() {
-                                    _errorMessage = errorMsg;
-                                    _isLoading = false;
-                                  });
-                                }
-                              }
-                            },
-                      icon: const Icon(Icons.g_mobiledata, size: 24),
-                      label: const Text('Continue with Google'),
-                      style: OutlinedButton.styleFrom(
-                        padding: const EdgeInsets.symmetric(vertical: 16),
-                        side: const BorderSide(
-                          color: AppColors.borderLight,
-                          width: 2,
+                                },
+                          icon: const Icon(Icons.g_mobiledata, size: 24),
+                          label: const Text('Continue with Google'),
+                          style: OutlinedButton.styleFrom(
+                            padding: const EdgeInsets.symmetric(vertical: 16),
+                            side: const BorderSide(
+                              color: AppColors.borderLight,
+                              width: 2,
+                            ),
+                            shape: RoundedRectangleBorder(
+                              borderRadius: BorderRadius.circular(12),
+                            ),
+                          ),
                         ),
-                        shape: RoundedRectangleBorder(
-                          borderRadius: BorderRadius.circular(12),
-                        ),
-                      ),
+                      ],
                     ),
-                  ],
+                  ),
                 ),
               ),
             ),

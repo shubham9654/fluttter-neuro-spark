@@ -1,3 +1,5 @@
+import 'dart:async';
+
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:flutter/foundation.dart';
 import 'package:firebase_auth/firebase_auth.dart';
@@ -8,41 +10,56 @@ import '../services/firestore_service.dart';
 /// State notifier for game stats
 class GameStatsNotifier extends Notifier<GameStats> {
   final _firestore = FirestoreService();
+  StreamSubscription<DocumentSnapshot>? _statsSub;
+  StreamSubscription<User?>? _authSub;
 
   @override
   GameStats build() {
-    // Load game stats from Firestore when provider is created
-    _loadGameStatsFromFirestore();
-
-    // Listen to real-time updates from Firestore
-    final user = FirebaseAuth.instance.currentUser;
-    if (user != null) {
-      _firestore
-          .watchGameStats()
-          .listen((snapshot) {
-            try {
-              if (snapshot.exists && snapshot.data() != null) {
-                final data = snapshot.data() as Map<String, dynamic>;
-                final stats = _gameStatsFromMap(data);
-                state = stats;
-              } else if (!snapshot.exists) {
-                // Document doesn't exist yet - initialize it
-                final defaultStats = GameStats(lastActiveDate: DateTime.now());
-                state = defaultStats;
-                _saveGameStatsToFirestore().catchError((e) {
-                  debugPrint('Error initializing game stats: $e');
-                });
-              }
-            } catch (e) {
-              debugPrint('Error processing Firestore game stats updates: $e');
-            }
-          })
-          .onError((error) {
-            debugPrint('Error listening to Firestore game stats: $error');
-          });
-    }
-
+    _initialize();
     return GameStats(lastActiveDate: DateTime.now());
+  }
+
+  void _initialize() {
+    // React to auth changes to isolate stats per user
+    _authSub ??= FirebaseAuth.instance.authStateChanges().listen((user) {
+      _restartForUser(user);
+    });
+    ref.onDispose(() {
+      _statsSub?.cancel();
+      _authSub?.cancel();
+    });
+
+    // Start for current user on first build
+    _restartForUser(FirebaseAuth.instance.currentUser);
+  }
+
+  Future<void> _restartForUser(User? user) async {
+    await _statsSub?.cancel();
+    _statsSub = null;
+    state = GameStats(lastActiveDate: DateTime.now());
+    if (user == null) return;
+
+    await _loadGameStatsFromFirestore();
+
+    _statsSub = _firestore.watchGameStats().listen((snapshot) {
+      try {
+        if (snapshot.exists && snapshot.data() != null) {
+          final data = snapshot.data() as Map<String, dynamic>;
+          final stats = _gameStatsFromMap(data);
+          state = stats;
+        } else if (!snapshot.exists) {
+          final defaultStats = GameStats(lastActiveDate: DateTime.now());
+          state = defaultStats;
+          _saveGameStatsToFirestore().catchError((e) {
+            debugPrint('Error initializing game stats: $e');
+          });
+        }
+      } catch (e) {
+        debugPrint('Error processing Firestore game stats updates: $e');
+      }
+    }, onError: (error) {
+      debugPrint('Error listening to Firestore game stats: $error');
+    });
   }
 
   /// Load game stats from Firestore

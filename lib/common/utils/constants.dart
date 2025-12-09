@@ -75,6 +75,7 @@ class AppConstants {
   static const String settingsBoxName = 'settings';
   static const String gameStatsBoxName = 'game_stats';
   static const String sessionsBoxName = 'sessions';
+  static const String keyCurrentUserId = 'current_user_id';
   
   // Shared Preferences Keys
   static const String keyOnboardingComplete = 'onboarding_complete';

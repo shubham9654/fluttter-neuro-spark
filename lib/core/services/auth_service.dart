@@ -2,6 +2,8 @@ import 'package:firebase_auth/firebase_auth.dart';
 import 'package:google_sign_in/google_sign_in.dart';
 import 'package:flutter/foundation.dart';
 import 'package:flutter/services.dart';
+import '../../common/utils/hive_service.dart';
+import '../../common/utils/constants.dart';
 import 'firestore_service.dart';
 
 /// Authentication service for Firebase Auth operations
@@ -31,6 +33,9 @@ class AuthService {
         }
       }
       
+      // Ensure local data is scoped to this user (clear caches if user changed)
+      await HiveService.switchUser(user.uid);
+
       // Save to Firestore (non-blocking - don't fail auth if Firestore fails)
       try {
         await _firestore.createUserDocument(user);
@@ -98,8 +103,9 @@ class AuthService {
       // Sign in to Firebase with the Google credential
       final userCredential = await _auth.signInWithCredential(credential);
       
-      // Save user data to Firestore (non-blocking)
+      // Ensure local isolation immediately, then save user data (non-blocking)
       if (userCredential.user != null) {
+        await HiveService.switchUser(userCredential.user!.uid);
         _saveUserData(userCredential.user!).catchError((e) {
           debugPrint('Background save user data failed: $e');
         });
@@ -138,9 +144,9 @@ class AuthService {
         password: password,
       );
       
-      // Update last seen in Firestore (non-blocking)
+      // Ensure local data isolation and update last seen (non-blocking)
       if (userCredential.user != null) {
-        // Don't await - let it run in background
+        await HiveService.switchUser(userCredential.user!.uid);
         _firestore.updateUserLastSeen().catchError((e) {
           debugPrint('Background update last seen failed: $e');
         });
@@ -163,8 +169,9 @@ class AuthService {
         password: password,
       );
       
-      // Save user data to Firestore (non-blocking)
+      // Save user data to Firestore (non-blocking) + ensure local isolation
       if (userCredential.user != null) {
+        await HiveService.switchUser(userCredential.user!.uid);
         // Don't await - let it run in background so it doesn't block navigation
         _saveUserData(userCredential.user!, displayName: displayName)
             .catchError((e) {
@@ -183,10 +190,15 @@ class AuthService {
   // Sign out
   Future<void> signOut() async {
     try {
+      // Sign out of Firebase + Google
       await Future.wait([
         _auth.signOut(),
         _googleSignIn.signOut(),
       ]);
+
+      // Clear all local user-scoped data so the next user starts fresh
+      await HiveService.clearUserScopedData();
+      await HiveService.userBox.put(AppConstants.keyCurrentUserId, '');
     } catch (e) {
       print('Error signing out: $e');
     }

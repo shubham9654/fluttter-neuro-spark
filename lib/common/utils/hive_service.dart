@@ -76,6 +76,28 @@ class HiveService {
     await sessionsBox.clear();
   }
 
+  /// Track and enforce per-user local data isolation.
+  /// If the signed-in user changes, clear local caches that are user-specific.
+  static Future<void> switchUser(String? userId) async {
+    if (userId == null || userId.isEmpty) return;
+    final box = userBox;
+    final lastUserId =
+        box.get(AppConstants.keyCurrentUserId, defaultValue: '') as String;
+    if (lastUserId != userId) {
+      await clearUserScopedData();
+      await box.put(AppConstants.keyCurrentUserId, userId);
+    }
+  }
+
+  /// Clear all data that should not leak between users.
+  static Future<void> clearUserScopedData() async {
+    await tasksBox.clear();
+    await gameStatsBox.clear();
+    await sessionsBox.clear();
+    await settingsBox.clear();
+    await userBox.clear();
+  }
+
   /// Get or create default user preferences
   static Future<UserPreferences> getOrCreatePreferences() async {
     final box = settingsBox;

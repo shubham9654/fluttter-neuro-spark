@@ -6,9 +6,9 @@ import 'package:firebase_auth/firebase_auth.dart';
 // Auth
 import 'package:neuro_spark/features/auth/presentation/pages/welcome_page.dart';
 import 'package:neuro_spark/features/auth/presentation/pages/welcome_page_simple.dart';
+import 'package:neuro_spark/features/auth/presentation/pages/auth_landing_page.dart';
 import 'package:neuro_spark/features/auth/presentation/pages/login_page.dart';
 import 'package:neuro_spark/features/auth/presentation/pages/signup_page.dart';
-import 'package:neuro_spark/features/auth/presentation/pages/auth_landing_page.dart';
 import 'go_router_refresh_stream.dart';
 // Onboarding
 import 'package:neuro_spark/features/onboarding/presentation/pages/neurotype_setup_page.dart';
