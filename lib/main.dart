@@ -9,6 +9,7 @@ import 'core/services/firebase_service.dart';
 import 'core/services/ad_service.dart';
 import 'core/services/payment_service.dart';
 import 'core/services/notification_service.dart';
+import 'core/services/stripe_service.dart';
 
 /// NeuroSpark Main Entry Point
 void main() async {
@@ -50,6 +51,16 @@ void main() async {
     await PaymentService.initialize();
   } catch (e) {
     debugPrint('⚠️ Payment service initialization failed: $e');
+  }
+
+  // Initialize Stripe (non-blocking; requires STRIPE_PUBLISHABLE_KEY dart-define)
+  try {
+    await StripeService.initialize(
+      urlScheme: 'neuro_spark',
+      merchantIdentifier: 'merchant.com.neurospark',
+    );
+  } catch (e) {
+    debugPrint('⚠️ Stripe initialization failed: $e');
   }
 
   // Initialize Notifications (non-blocking)
