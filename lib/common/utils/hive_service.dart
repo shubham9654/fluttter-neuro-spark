@@ -98,6 +98,46 @@ class HiveService {
     await userBox.clear();
   }
 
+  /// Check if the user guide was seen for a specific user.
+  static bool isUserGuideSeen(String userId) {
+    final key = _guideKey(userId);
+    return userBox.get(key, defaultValue: false) as bool;
+  }
+
+  /// Mark the user guide as seen for a specific user.
+  static Future<void> setUserGuideSeen(String userId) async {
+    final key = _guideKey(userId);
+    await userBox.put(key, true);
+  }
+
+  static String _guideKey(String userId) => 'guide_seen_$userId';
+
+  /// Step-based coach state
+  static String _coachStepKey(String userId) => 'coach_step_$userId';
+  static String _coachDoneKey(String userId) => 'coach_done_$userId';
+
+  static int getCoachStep(String userId) {
+    return userBox.get(_coachStepKey(userId), defaultValue: 0) as int;
+  }
+
+  static Future<void> setCoachStep(String userId, int step) async {
+    await userBox.put(_coachStepKey(userId), step);
+  }
+
+  static bool isCoachDone(String userId) {
+    return userBox.get(_coachDoneKey(userId), defaultValue: false) as bool;
+  }
+
+  static Future<void> setCoachDone(String userId, bool done) async {
+    await userBox.put(_coachDoneKey(userId), done);
+  }
+
+  /// Reset coach progress for a user (used for brand new registrations).
+  static Future<void> resetCoach(String userId) async {
+    await setCoachDone(userId, false);
+    await setCoachStep(userId, 0);
+  }
+
   /// Get or create default user preferences
   static Future<UserPreferences> getOrCreatePreferences() async {
     final box = settingsBox;

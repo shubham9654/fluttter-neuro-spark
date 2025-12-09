@@ -7,6 +7,7 @@ import '../../../../common/theme/app_colors.dart';
 import '../../../../common/theme/text_styles.dart';
 import '../../../../common/widgets/themed_button.dart';
 import '../../../../common/utils/constants.dart';
+import '../../../../common/utils/hive_service.dart';
 import '../../../../core/providers/auth_providers.dart';
 import '../widgets/gradient_background.dart';
 
@@ -88,47 +89,54 @@ class AuthLandingPage extends ConsumerWidget {
                       // Buttons
                       Column(
                         children: [
-                          _SocialLoginButton(
-                            icon: FontAwesomeIcons.google,
-                            label: 'Continue with Google',
-                            onPressed: () async {
-                              try {
-                                final result =
-                                    await authService.signInWithGoogle();
-                                if (context.mounted && result != null) {
-                                  context.go('/dashboard');
-                                }
-                              } on PlatformException catch (e) {
-                                var message =
-                                    'Google Sign-In failed. Please try again.';
-                                if (e.code == 'sign_in_failed' &&
-                                    e.message != null &&
-                                    e.message!.contains('ApiException: 10')) {
-                                  message =
-                                      'Google Sign-In not configured. Add SHA-1 fingerprint in Firebase Console.';
-                                }
-                                if (context.mounted) {
-                                  ScaffoldMessenger.of(context).showSnackBar(
-                                    SnackBar(
-                                      content: Text(message),
-                                      backgroundColor: AppColors.errorRed,
-                                      duration: const Duration(seconds: 5),
-                                    ),
-                                  );
-                                }
-                              } catch (e) {
-                                if (context.mounted) {
-                                  ScaffoldMessenger.of(context).showSnackBar(
-                                    SnackBar(
-                                      content:
-                                          Text('Google Sign-In failed: $e'),
-                                      backgroundColor: AppColors.errorRed,
-                                    ),
-                                  );
+                      _SocialLoginButton(
+                        icon: FontAwesomeIcons.google,
+                        label: 'Continue with Google',
+                        onPressed: () async {
+                          try {
+                            final result =
+                                await authService.signInWithGoogle();
+                            if (context.mounted && result != null) {
+                              final uid = result.user?.uid;
+                              if (uid != null) {
+                                final done = HiveService.isCoachDone(uid);
+                                if (!done) {
+                                  await HiveService.resetCoach(uid);
                                 }
                               }
-                            },
-                          ),
+                              context.go('/dashboard');
+                            }
+                          } on PlatformException catch (e) {
+                            var message =
+                                'Google Sign-In failed. Please try again.';
+                            if (e.code == 'sign_in_failed' &&
+                                e.message != null &&
+                                e.message!.contains('ApiException: 10')) {
+                              message =
+                                  'Google Sign-In not configured. Add SHA-1 fingerprint in Firebase Console.';
+                            }
+                            if (context.mounted) {
+                              ScaffoldMessenger.of(context).showSnackBar(
+                                SnackBar(
+                                  content: Text(message),
+                                  backgroundColor: AppColors.errorRed,
+                                  duration: const Duration(seconds: 5),
+                                ),
+                              );
+                            }
+                          } catch (e) {
+                            if (context.mounted) {
+                              ScaffoldMessenger.of(context).showSnackBar(
+                                SnackBar(
+                                  content:
+                                      Text('Google Sign-In failed: $e'),
+                                  backgroundColor: AppColors.errorRed,
+                                ),
+                              );
+                            }
+                          }
+                        },
+                      ),
                           const SizedBox(height: AppConstants.paddingM),
                           ThemedSecondaryButton(
                             text: 'Continue with Email',

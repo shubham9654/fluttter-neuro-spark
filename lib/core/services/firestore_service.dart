@@ -317,6 +317,30 @@ class FirestoreService {
     }
   }
 
+  /// Guide/Coach flags stored in Firestore (per user)
+  Future<bool> isGuideShown() async {
+    if (_userId == null) return false;
+    try {
+      final doc = await _usersCollection.doc(_userId).get();
+      final data = doc.data() as Map<String, dynamic>?;
+      return (data?['isGuideShown'] as bool?) ?? false;
+    } catch (e) {
+      debugPrint('❌ Error reading isGuideShown: $e');
+      return false;
+    }
+  }
+
+  Future<void> setGuideShown({bool shown = true}) async {
+    if (_userId == null) return;
+    try {
+      await _usersCollection
+          .doc(_userId)
+          .set({'isGuideShown': shown}, SetOptions(merge: true));
+    } catch (e) {
+      debugPrint('❌ Error setting isGuideShown: $e');
+    }
+  }
+
   /// Save user preferences to Firestore
   Future<void> saveUserPreferences(Map<String, dynamic> preferences) async {
     if (_userId == null) {

@@ -9,6 +9,8 @@ import '../../../../common/utils/constants.dart';
 import '../../../../common/widgets/themed_button.dart';
 import '../../../../core/providers/task_providers.dart';
 import '../../../../core/providers/game_stats_providers.dart';
+import '../../../../common/utils/hive_service.dart';
+import '../../../../core/services/firestore_service.dart';
 import '../../../../core/providers/auth_providers.dart';
 import '../../../../core/services/ad_service.dart';
 import '../../../task/data/models/task.dart';
@@ -26,12 +28,50 @@ class DashboardPageComplete extends ConsumerStatefulWidget {
 class _DashboardPageCompleteState
     extends ConsumerState<DashboardPageComplete> {
   late ConfettiController _confettiController;
+  bool _showCoach = false;
+  int _coachIndex = 0;
+  bool _coachChecked = false;
+  final _firestore = FirestoreService();
+
+  final List<_CoachTip> _coachTips = const [
+    _CoachTip(
+      icon: FontAwesomeIcons.penFancy,
+      title: 'Add your first task',
+      body: 'Open Brain Dump and type anything. Swipe right to move it into Today, swipe left to delete.',
+      ctaLabel: 'Go to Brain Dump',
+      ctaRoute: '/dashboard/inbox',
+    ),
+    _CoachTip(
+      icon: FontAwesomeIcons.listCheck,
+      title: 'Organize for focus',
+      body: 'Use the Sorter to keep only 3 tasks in Today. Move the rest to Not Today.',
+      ctaLabel: 'Open Sorter',
+      ctaRoute: '/sorter',
+    ),
+    _CoachTip(
+      icon: FontAwesomeIcons.clock,
+      title: 'Start a focus session',
+      body: 'Pick a Today task and start a 25-minute focus timer to earn XP and coins.',
+      ctaLabel: 'Start Focus',
+      ctaRoute: '/focus/quick',
+    ),
+    _CoachTip(
+      icon: FontAwesomeIcons.coins,
+      title: 'Use your rewards',
+      body: 'Spend coins in the Dopamine Shop on themes and items for extra motivation.',
+      ctaLabel: 'Open Shop',
+      ctaRoute: '/shop',
+    ),
+  ];
 
   @override
   void initState() {
     super.initState();
     _confettiController =
         ConfettiController(duration: const Duration(seconds: 2));
+    WidgetsBinding.instance.addPostFrameCallback((_) {
+      _maybeShowCoach();
+    });
   }
 
   @override
@@ -40,11 +80,72 @@ class _DashboardPageCompleteState
     super.dispose();
   }
 
+  Future<void> _maybeShowCoach() async {
+    final uid = ref.read(currentUserProvider)?.uid;
+    if (uid == null) return;
+    final doneLocal = HiveService.isCoachDone(uid);
+    final doneRemote = await _firestore.isGuideShown();
+    if (doneLocal || doneRemote) {
+      // Sync local to true if remote is true
+      if (doneRemote && !doneLocal) {
+        await HiveService.setCoachDone(uid, true);
+      }
+      return;
+    }
+    // If step not set, start from zero
+    if (HiveService.getCoachStep(uid) >= _coachTips.length) {
+      await HiveService.setCoachStep(uid, 0);
+      await HiveService.setCoachDone(uid, false);
+    }
+    final savedStep = HiveService.getCoachStep(uid);
+    setState(() {
+      _showCoach = true;
+      _coachIndex = savedStep.clamp(0, _coachTips.length - 1);
+    });
+  }
+
+  Future<void> _markCoachSeen() async {
+    final uid = ref.read(currentUserProvider)?.uid;
+    if (uid != null) {
+      await HiveService.setCoachDone(uid, true);
+      await _firestore.setGuideShown(shown: true);
+    }
+  }
+
+  void _nextCoach() {
+    if (_coachIndex < _coachTips.length - 1) {
+      setState(() {
+        _coachIndex += 1;
+      });
+      final uid = ref.read(currentUserProvider)?.uid;
+      if (uid != null) {
+        HiveService.setCoachStep(uid, _coachIndex);
+      }
+    } else {
+      _closeCoach();
+    }
+  }
+
+  Future<void> _closeCoach() async {
+    await _markCoachSeen();
+    if (mounted) {
+      setState(() {
+        _showCoach = false;
+      });
+    }
+  }
+
   @override
   Widget build(BuildContext context) {
     final todayTasks = ref.watch(todayTasksProvider);
     final gameStats = ref.watch(gameStatsProvider);
     final user = ref.watch(currentUserProvider);
+    if (!_coachChecked && user != null) {
+      _coachChecked = true;
+      WidgetsBinding.instance.addPostFrameCallback((_) {
+        _maybeShowCoach();
+      });
+    }
 
     final completedToday =
         todayTasks.where((t) => t.status == TaskStatus.completed).length;
@@ -192,6 +293,8 @@ class _DashboardPageCompleteState
               ],
             ),
           ),
+
+          if (_showCoach) _buildCoachOverlay(context),
         ],
       ),
 
@@ -501,6 +604,158 @@ class _DashboardPageCompleteState
     if (hour < 17) return 'Good Afternoon';
     return 'Good Evening';
   }
+
+  Widget _buildCoachOverlay(BuildContext context) {
+    final tip = _coachTips[_coachIndex];
+    final isLast = _coachIndex == _coachTips.length - 1;
+    return Positioned(
+      left: AppConstants.paddingM,
+      right: AppConstants.paddingM,
+      bottom: AppConstants.paddingL,
+      child: Material(
+        elevation: 10,
+        borderRadius: BorderRadius.circular(18),
+        color: Colors.transparent,
+        child: Container(
+          padding: const EdgeInsets.all(AppConstants.paddingM),
+          decoration: BoxDecoration(
+            color: Colors.white,
+            borderRadius: BorderRadius.circular(18),
+            boxShadow: [
+              BoxShadow(
+                color: Colors.black.withOpacity(0.08),
+                blurRadius: 16,
+                offset: const Offset(0, 8),
+              ),
+            ],
+          ),
+          child: Column(
+            crossAxisAlignment: CrossAxisAlignment.start,
+            mainAxisSize: MainAxisSize.min,
+            children: [
+              Row(
+                children: [
+                  Container(
+                    padding: const EdgeInsets.all(10),
+                    decoration: BoxDecoration(
+                      color: AppColors.primary.withOpacity(0.08),
+                      shape: BoxShape.circle,
+                    ),
+                    child: FaIcon(
+                      tip.icon,
+                      color: AppColors.primary,
+                      size: 16,
+                    ),
+                  ),
+                  const SizedBox(width: AppConstants.paddingS),
+                  Expanded(
+                    child: Text(
+                      tip.title,
+                      style: AppTextStyles.titleSmall.copyWith(
+                        color: AppColors.textDark,
+                        fontWeight: FontWeight.bold,
+                      ),
+                    ),
+                  ),
+                  IconButton(
+                    onPressed: _closeCoach,
+                    icon: const Icon(Icons.close, color: AppColors.textLight, size: 18),
+                  ),
+                ],
+              ),
+              const SizedBox(height: AppConstants.paddingS),
+              Text(
+                tip.body,
+                style: AppTextStyles.bodySmall.copyWith(
+                  color: AppColors.textMedium,
+                  height: 1.4,
+                ),
+              ),
+              const SizedBox(height: AppConstants.paddingS),
+              Row(
+                children: [
+                  Container(
+                    padding: const EdgeInsets.symmetric(
+                      horizontal: 10,
+                      vertical: 6,
+                    ),
+                    decoration: BoxDecoration(
+                      color: AppColors.primary.withOpacity(0.08),
+                      borderRadius: BorderRadius.circular(20),
+                    ),
+                    child: Text(
+                      '${_coachIndex + 1}/${_coachTips.length}',
+                      style: AppTextStyles.captionText.copyWith(
+                        color: AppColors.primary,
+                        fontWeight: FontWeight.w700,
+                      ),
+                    ),
+                  ),
+                  const Spacer(),
+                  TextButton(
+                    onPressed: _closeCoach,
+                    child: Text(
+                      'Skip',
+                      style: AppTextStyles.bodyMedium.copyWith(
+                        color: AppColors.textLight,
+                        fontWeight: FontWeight.bold,
+                      ),
+                    ),
+                  ),
+                  TextButton(
+                    onPressed: _nextCoach,
+                    child: Text(
+                      isLast ? 'Got it' : 'Next',
+                      style: AppTextStyles.bodyMedium.copyWith(
+                        color: AppColors.primary,
+                        fontWeight: FontWeight.bold,
+                      ),
+                    ),
+                  ),
+                ],
+              ),
+              const SizedBox(height: AppConstants.paddingS),
+              SizedBox(
+                width: double.infinity,
+                child: OutlinedButton.icon(
+                  onPressed: () {
+                    if (tip.ctaRoute != null) {
+                      context.push(tip.ctaRoute!);
+                    }
+                  },
+                  icon: const Icon(Icons.play_arrow_rounded, size: 18),
+                  label: Text(tip.ctaLabel ?? 'Do this now'),
+                  style: OutlinedButton.styleFrom(
+                    foregroundColor: AppColors.primary,
+                    side: BorderSide(color: AppColors.primary.withOpacity(0.25)),
+                    shape: RoundedRectangleBorder(
+                      borderRadius: BorderRadius.circular(12),
+                    ),
+                  ),
+                ),
+              ),
+            ],
+          ),
+        ),
+      ),
+    );
+  }
+}
+
+class _CoachTip {
+  final IconData icon;
+  final String title;
+  final String body;
+  final String? ctaLabel;
+  final String? ctaRoute;
+
+  const _CoachTip({
+    required this.icon,
+    required this.title,
+    required this.body,
+    this.ctaLabel,
+    this.ctaRoute,
+  });
 }
 
 class _QuickActionCard extends StatelessWidget {
