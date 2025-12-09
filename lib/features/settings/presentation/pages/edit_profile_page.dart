@@ -51,6 +51,9 @@ class _EditProfilePageState extends ConsumerState<EditProfilePage> {
         if (data != null && mounted) {
           setState(() {
             _bioController.text = data['bio'] ?? '';
+            if ((data['displayName'] as String?)?.isNotEmpty ?? false) {
+              _nameController.text = data['displayName'];
+            }
           });
         }
       }

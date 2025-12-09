@@ -21,9 +21,22 @@ class ProfilePage extends ConsumerWidget {
       data: (data) => data,
       orElse: () => null,
     );
-    final displayName =
-        profileData?['displayName'] ?? user?.displayName ?? 'NeuroSpark User';
-    final email = profileData?['email'] ?? user?.email;
+    final hasProfileName =
+        ((profileData?['displayName'] as String?)?.isNotEmpty ?? false);
+    final hasProfileEmail =
+        ((profileData?['email'] as String?)?.isNotEmpty ?? false);
+
+    String displayName = user?.displayName ?? 'NeuroSpark User';
+    String? email = user?.email;
+
+    if (hasProfileName) {
+      displayName = profileData?['displayName'] as String? ?? displayName;
+    }
+    if (hasProfileEmail) {
+      email = profileData?['email'] as String?;
+    }
+    final emailDisplay = email ?? '';
+    final hasEmail = emailDisplay.isNotEmpty;
     final authService = ref.watch(authServiceProvider);
 
     return Scaffold(
@@ -69,14 +82,16 @@ class ProfilePage extends ConsumerWidget {
                           child: user?.photoURL != null
                               ? ClipOval(
                                   child: Image.network(
-                                    user!.photoURL!,
+                                    user?.photoURL ?? '',
                                     width: 92,
                                     height: 92,
                                     fit: BoxFit.cover,
                                   ),
                                 )
                               : Text(
-                                  (user?.displayName?[0] ?? 'N').toUpperCase(),
+                                  displayName.isNotEmpty
+                                      ? displayName[0].toUpperCase()
+                                      : 'N',
                                   style: TextStyle(
                                     fontSize: 40,
                                     fontWeight: FontWeight.bold,
@@ -94,9 +109,9 @@ class ProfilePage extends ConsumerWidget {
                           fontWeight: FontWeight.bold,
                         ),
                       ),
-                      if (email != null)
+                      if (hasEmail)
                         Text(
-                          email!,
+                          emailDisplay,
                           style: AppTextStyles.bodySmall.copyWith(
                             color: Colors.white.withOpacity(0.9),
                           ),
