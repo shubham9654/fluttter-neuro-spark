@@ -1,5 +1,6 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_card_swiper/flutter_card_swiper.dart';
+import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:font_awesome_flutter/font_awesome_flutter.dart';
 import 'package:go_router/go_router.dart';
 import '../../../../common/theme/app_colors.dart';
@@ -12,14 +13,14 @@ import '../../data/repositories/task_repository.dart';
 
 /// Screen 5: Daily Sorter (The "3-Task Rule")
 /// FR-B4: Users swipe to select max 3 tasks for today
-class DailySorterPage extends StatefulWidget {
+class DailySorterPage extends ConsumerStatefulWidget {
   const DailySorterPage({super.key});
 
   @override
-  State<DailySorterPage> createState() => _DailySorterPageState();
+  ConsumerState<DailySorterPage> createState() => _DailySorterPageState();
 }
 
-class _DailySorterPageState extends State<DailySorterPage> {
+class _DailySorterPageState extends ConsumerState<DailySorterPage> {
   final _taskRepository = TaskRepository();
   final CardSwiperController _swiperController = CardSwiperController();
   
@@ -125,6 +126,7 @@ class _DailySorterPageState extends State<DailySorterPage> {
 
   @override
   Widget build(BuildContext context) {
+
     if (_inboxTasks.isEmpty) {
       return _EmptySorterState(
         onBack: () => context.pop(),
@@ -137,45 +139,47 @@ class _DailySorterPageState extends State<DailySorterPage> {
     return Scaffold(
       backgroundColor: AppColors.backgroundLight,
       body: SafeArea(
-        child: Column(
+        child: Stack(
           children: [
-            // Header with progress
-            Padding(
-              padding: const EdgeInsets.all(AppConstants.paddingL),
-              child: Column(
-                children: [
-                  Row(
-                    mainAxisAlignment: MainAxisAlignment.spaceBetween,
+            Column(
+              children: [
+                // Header with progress
+                Padding(
+                  padding: const EdgeInsets.all(AppConstants.paddingL),
+                  child: Column(
                     children: [
-                      IconButton(
-                        icon: const Icon(Icons.close),
-                        onPressed: _skipSorting,
+                      Row(
+                        mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                        children: [
+                          IconButton(
+                            icon: const Icon(Icons.close),
+                            onPressed: _skipSorting,
+                          ),
+                          Text(
+                            '$remainingTasks left to sort',
+                            style: AppTextStyles.labelMedium.copyWith(
+                              color: AppColors.textMedium,
+                            ),
+                          ),
+                          TextButton(
+                            onPressed: _skipSorting,
+                            child: const Text('Skip'),
+                          ),
+                        ],
                       ),
-                      Text(
-                        '$remainingTasks left to sort',
-                        style: AppTextStyles.labelMedium.copyWith(
-                          color: AppColors.textMedium,
+                      const SizedBox(height: 8),
+                      ClipRRect(
+                        borderRadius: BorderRadius.circular(4),
+                        child: LinearProgressIndicator(
+                          value: progress,
+                          minHeight: 6,
+                          backgroundColor: AppColors.borderLight,
+                          color: AppColors.primary,
                         ),
-                      ),
-                      TextButton(
-                        onPressed: _skipSorting,
-                        child: const Text('Skip'),
                       ),
                     ],
                   ),
-                  const SizedBox(height: 8),
-                  ClipRRect(
-                    borderRadius: BorderRadius.circular(4),
-                    child: LinearProgressIndicator(
-                      value: progress,
-                      minHeight: 6,
-                      backgroundColor: AppColors.borderLight,
-                      color: AppColors.primary,
-                    ),
-                  ),
-                ],
-              ),
-            ),
+                ),
 
             // Selected count
             Container(
@@ -323,9 +327,13 @@ class _DailySorterPageState extends State<DailySorterPage> {
             ),
           ],
         ),
+      ],
+        ),
       ),
     );
   }
+
+
 
   List<Widget> _buildDots() {
     return List.generate(3, (index) {
@@ -499,4 +507,5 @@ class _EmptySorterState extends StatelessWidget {
     );
   }
 }
+
 

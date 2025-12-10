@@ -7,7 +7,6 @@ import '../../../../common/theme/app_colors.dart';
 import '../../../../common/theme/text_styles.dart';
 import '../../../../common/widgets/themed_button.dart';
 import '../../../../common/utils/constants.dart';
-import '../../../../common/utils/hive_service.dart';
 import '../../../../core/providers/auth_providers.dart';
 import '../widgets/gradient_background.dart';
 
@@ -56,9 +55,7 @@ class _LoginPageState extends ConsumerState<LoginPage> {
           // Wait a bit for auth state to update, then navigate
           await Future.delayed(const Duration(milliseconds: 300));
           if (mounted) {
-            final uid = result.user?.uid;
-            final seen = uid != null && HiveService.isUserGuideSeen(uid);
-            context.go(seen ? '/dashboard' : '/user-guide');
+            context.go('/dashboard');
           }
         } else {
           setState(() {
@@ -355,13 +352,6 @@ class _LoginPageState extends ConsumerState<LoginPage> {
                                         // Wait a bit for auth state to update, then navigate
                                         await Future.delayed(const Duration(milliseconds: 300));
                                         if (mounted) {
-                                          final uid = result.user?.uid;
-                                          if (uid != null) {
-                                            final done = HiveService.isCoachDone(uid);
-                                            if (!done) {
-                                              await HiveService.resetCoach(uid);
-                                            }
-                                          }
                                           context.go('/dashboard');
                                         }
                                       } else {

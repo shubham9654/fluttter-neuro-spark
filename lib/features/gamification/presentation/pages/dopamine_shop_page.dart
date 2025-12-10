@@ -10,11 +10,16 @@ import 'package:go_router/go_router.dart';
 
 /// Dopamine Shop Page
 /// Reward store where users can spend coins
-class DopamineShopPage extends ConsumerWidget {
+class DopamineShopPage extends ConsumerStatefulWidget {
   const DopamineShopPage({super.key});
 
   @override
-  Widget build(BuildContext context, WidgetRef ref) {
+  ConsumerState<DopamineShopPage> createState() => _DopamineShopPageState();
+}
+
+class _DopamineShopPageState extends ConsumerState<DopamineShopPage> {
+  @override
+  Widget build(BuildContext context) {
     final gameStats = ref.watch(gameStatsProvider);
 
     final shopItems = [
@@ -142,8 +147,10 @@ class DopamineShopPage extends ConsumerWidget {
         ],
       ),
       body: SafeArea(
-        child: CustomScrollView(
-          slivers: [
+        child: Stack(
+          children: [
+            CustomScrollView(
+              slivers: [
             // Header
             SliverToBoxAdapter(
               child: Container(
@@ -261,9 +268,12 @@ class DopamineShopPage extends ConsumerWidget {
             ),
           ],
         ),
+      ],
+        ),
       ),
     );
   }
+
 
   Widget _buildShopItemCard(
     BuildContext context,

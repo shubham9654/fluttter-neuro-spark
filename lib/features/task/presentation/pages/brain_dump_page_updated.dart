@@ -276,7 +276,6 @@ class _BrainDumpPageUpdatedState extends ConsumerState<BrainDumpPageUpdated> {
           ],
         ),
       ),
-
       floatingActionButton: FloatingActionButton.extended(
         onPressed: () => context.push('/sorter'),
         icon: const FaIcon(FontAwesomeIcons.sort),
@@ -285,6 +284,8 @@ class _BrainDumpPageUpdatedState extends ConsumerState<BrainDumpPageUpdated> {
       ),
     );
   }
+
+
 
   Widget _buildTaskCard(Task task) {
     return Dismissible(
@@ -465,4 +466,5 @@ class _BrainDumpPageUpdatedState extends ConsumerState<BrainDumpPageUpdated> {
     );
   }
 }
+
 

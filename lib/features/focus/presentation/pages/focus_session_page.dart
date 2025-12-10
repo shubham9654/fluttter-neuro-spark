@@ -243,10 +243,12 @@ class _FocusSessionPageState extends ConsumerState<FocusSessionPage>
         ],
       ),
       body: SafeArea(
-        child: Padding(
-          padding: const EdgeInsets.all(AppConstants.paddingL),
-          child: Column(
-            children: [
+        child: Stack(
+          children: [
+            Padding(
+              padding: const EdgeInsets.all(AppConstants.paddingL),
+              child: Column(
+                children: [
               // Task info
               Container(
                 padding: const EdgeInsets.all(AppConstants.paddingM),
@@ -443,10 +445,13 @@ class _FocusSessionPageState extends ConsumerState<FocusSessionPage>
               ),
             ],
           ),
+            ),
+          ],
         ),
       ),
     );
   }
+
 
   void _showExitDialog() {
     showDialog(
@@ -472,3 +477,4 @@ class _FocusSessionPageState extends ConsumerState<FocusSessionPage>
     );
   }
 }
+
