@@ -45,5 +45,9 @@
 	<true/>
 	<key>UIApplicationSupportsIndirectInputEvents</key>
 	<true/>
+	<key>NSMicrophoneUsageDescription</key>
+	<string>We use the microphone for speech input so you can dictate tasks.</string>
+	<key>NSSpeechRecognitionUsageDescription</key>
+	<string>We use speech recognition to turn your voice into text for tasks.</string>
 </dict>
 </plist>

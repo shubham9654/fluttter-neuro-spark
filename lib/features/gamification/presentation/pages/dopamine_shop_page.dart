@@ -1,6 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:font_awesome_flutter/font_awesome_flutter.dart';
+import 'package:just_audio/just_audio.dart';
 import '../../../../common/theme/app_colors.dart';
 import '../../../../common/theme/text_styles.dart';
 import '../../../../common/utils/constants.dart';
@@ -18,6 +19,18 @@ class DopamineShopPage extends ConsumerStatefulWidget {
 }
 
 class _DopamineShopPageState extends ConsumerState<DopamineShopPage> {
+  final _audioPlayer = AudioPlayer();
+  String? _activeSoundId;
+  bool _isLoadingSound = false;
+
+  // Streaming ambience sources (royalty-free). Replace with bundled assets if desired.
+  final Map<String, String> _soundUrls = {
+    'sound_rain':
+        'https://cdn.pixabay.com/audio/2021/11/19/audio_4a5d6bce1e.mp3',
+    'sound_cafe':
+        'https://cdn.pixabay.com/audio/2022/03/15/audio_f3c2a3bfa7.mp3',
+  };
+
   @override
   Widget build(BuildContext context) {
     final gameStats = ref.watch(gameStatsProvider);
@@ -253,6 +266,8 @@ class _DopamineShopPageState extends ConsumerState<DopamineShopPage> {
                     final canAfford = gameStats.coins >= item.price;
                     final isUnlocked =
                         gameStats.unlockedItems.contains(item.id);
+                    final isSound = _soundUrls.containsKey(item.id);
+                    final isActiveSound = _activeSoundId == item.id;
 
                     return _buildShopItemCard(
                       context,
@@ -260,6 +275,8 @@ class _DopamineShopPageState extends ConsumerState<DopamineShopPage> {
                       item,
                       canAfford,
                       isUnlocked,
+                      isSound,
+                      isActiveSound,
                     );
                   },
                   childCount: shopItems.length,
@@ -281,14 +298,40 @@ class _DopamineShopPageState extends ConsumerState<DopamineShopPage> {
     ShopItem item,
     bool canAfford,
     bool isUnlocked,
+    bool isSound,
+    bool isActiveSound,
   ) {
     return Material(
       color: Colors.white,
       borderRadius: BorderRadius.circular(16),
       child: InkWell(
-        onTap: canAfford && !isUnlocked
-            ? () => _purchaseItem(context, ref, item)
-            : null,
+        onTap: () async {
+          if (_isLoadingSound) return;
+          if (!isUnlocked) {
+            if (canAfford) {
+              _purchaseItem(context, ref, item);
+            } else {
+              _showBuyCoinsDialog(
+                context,
+                ref,
+                item.price - ref.read(gameStatsProvider).coins,
+              );
+            }
+            return;
+          }
+
+          if (isSound) {
+            await _toggleSound(item);
+            return;
+          }
+
+          ScaffoldMessenger.of(context).showSnackBar(
+            SnackBar(
+              content: Text('${item.name} is already unlocked'),
+              duration: const Duration(seconds: 1),
+            ),
+          );
+        },
         borderRadius: BorderRadius.circular(16),
         child: Container(
           decoration: BoxDecoration(
@@ -376,6 +419,17 @@ class _DopamineShopPageState extends ConsumerState<DopamineShopPage> {
                                 fontWeight: FontWeight.bold,
                               ),
                             ),
+                            if (isSound)
+                              Padding(
+                                padding: const EdgeInsets.only(left: 6),
+                                child: Text(
+                                  isActiveSound ? 'Playing' : 'Tap to play',
+                                  style: AppTextStyles.labelSmall.copyWith(
+                                    color: AppColors.textMedium,
+                                    fontWeight: FontWeight.w600,
+                                  ),
+                                ),
+                              ),
                           ],
                         ),
                       )
@@ -420,11 +474,101 @@ class _DopamineShopPageState extends ConsumerState<DopamineShopPage> {
                     ),
                   ),
                 ),
+              if (isSound && isActiveSound)
+                Positioned(
+                  top: 12,
+                  right: 12,
+                  child: Container(
+                    padding:
+                        const EdgeInsets.symmetric(horizontal: 10, vertical: 6),
+                    decoration: BoxDecoration(
+                      color: AppColors.successGreen.withOpacity(0.9),
+                      borderRadius: BorderRadius.circular(12),
+                    ),
+                    child: Row(
+                      mainAxisSize: MainAxisSize.min,
+                      children: const [
+                        Icon(Icons.volume_up, size: 16, color: Colors.white),
+                        SizedBox(width: 6),
+                        Text(
+                          'Playing',
+                          style: TextStyle(
+                            color: Colors.white,
+                            fontSize: 12,
+                            fontWeight: FontWeight.bold,
+                          ),
+                        ),
+                      ],
+                    ),
+                  ),
+                ),
             ],
           ),
         ),
       ),
     );
+  }
+
+  Future<void> _toggleSound(ShopItem item) async {
+    final soundUrl = _soundUrls[item.id];
+    if (soundUrl == null) {
+      ScaffoldMessenger.of(context).showSnackBar(
+        const SnackBar(
+          content: Text('No sound source configured for this item.'),
+        ),
+      );
+      return;
+    }
+
+    HapticHelper.mediumImpact();
+
+    // Stop current sound if tapping the active one
+    if (_activeSoundId == item.id) {
+      await _audioPlayer.stop();
+      setState(() {
+        _activeSoundId = null;
+      });
+      return;
+    }
+
+    setState(() {
+      _isLoadingSound = true;
+      _activeSoundId = item.id;
+    });
+
+    try {
+      await _audioPlayer.stop();
+      await _audioPlayer.setUrl(soundUrl);
+      await _audioPlayer.setLoopMode(LoopMode.one);
+      await _audioPlayer.play();
+      setState(() {
+        _isLoadingSound = false;
+      });
+      ScaffoldMessenger.of(context).showSnackBar(
+        SnackBar(
+          content: Text('Playing ${item.name}'),
+          duration: const Duration(seconds: 1),
+        ),
+      );
+    } catch (e) {
+      debugPrint('Error playing sound ${item.id}: $e');
+      setState(() {
+        _isLoadingSound = false;
+        _activeSoundId = null;
+      });
+      ScaffoldMessenger.of(context).showSnackBar(
+        SnackBar(
+          content: Text('Could not play ${item.name}. Check your connection.'),
+          backgroundColor: AppColors.errorRed,
+        ),
+      );
+    }
+  }
+
+  @override
+  void dispose() {
+    _audioPlayer.dispose();
+    super.dispose();
   }
 
   void _purchaseItem(BuildContext context, WidgetRef ref, ShopItem item) {
