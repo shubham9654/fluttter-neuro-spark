@@ -22,6 +22,7 @@ class _DopamineShopPageState extends ConsumerState<DopamineShopPage> {
   final _audioPlayer = AudioPlayer();
   String? _activeSoundId;
   bool _isLoadingSound = false;
+  Stream<PlayerState>? _playerStateStream;
 
   /// Calming ambience sources (remote).
   /// If any link misbehaves, swap to another HTTPS MP3 URL.
@@ -39,6 +40,16 @@ class _DopamineShopPageState extends ConsumerState<DopamineShopPage> {
 
   @override
   Widget build(BuildContext context) {
+    _playerStateStream ??= _audioPlayer.playerStateStream..listen((state) {
+      // Clear active sound when playback ends or errors
+      if (!state.playing || state.processingState == ProcessingState.completed) {
+        setState(() {
+          _activeSoundId = null;
+          _isLoadingSound = false;
+        });
+      }
+    });
+
     final gameStats = ref.watch(gameStatsProvider);
 
     final shopItems = [
