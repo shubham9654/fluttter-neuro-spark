@@ -5,6 +5,7 @@ import 'package:flutter/foundation.dart';
 import 'package:firebase_auth/firebase_auth.dart';
 import 'package:cloud_firestore/cloud_firestore.dart';
 import '../../features/gamification/data/models/game_stats.dart';
+import '../../common/utils/hive_service.dart';
 import '../services/firestore_service.dart';
 
 /// State notifier for game stats
@@ -36,8 +37,12 @@ class GameStatsNotifier extends Notifier<GameStats> {
   Future<void> _restartForUser(User? user) async {
     await _statsSub?.cancel();
     _statsSub = null;
-    state = GameStats(lastActiveDate: DateTime.now());
+    // Load cached stats immediately for fast/offline UX
+    await _loadLocalGameStats();
     if (user == null) return;
+
+    // Keep Hive data isolated per user
+    await HiveService.switchUser(user.uid);
 
     await _loadGameStatsFromFirestore();
 
@@ -47,12 +52,14 @@ class GameStatsNotifier extends Notifier<GameStats> {
           final data = snapshot.data() as Map<String, dynamic>;
           final stats = _gameStatsFromMap(data);
           state = stats;
+          _saveLocalGameStats(stats);
         } else if (!snapshot.exists) {
           final defaultStats = GameStats(lastActiveDate: DateTime.now());
           state = defaultStats;
           _saveGameStatsToFirestore().catchError((e) {
             debugPrint('Error initializing game stats: $e');
           });
+          _saveLocalGameStats(defaultStats);
         }
       } catch (e) {
         debugPrint('Error processing Firestore game stats updates: $e');
@@ -72,16 +79,37 @@ class GameStatsNotifier extends Notifier<GameStats> {
       if (statsData != null) {
         final stats = _gameStatsFromMap(statsData);
         state = stats;
+        _saveLocalGameStats(stats);
       } else {
         // No game stats exist yet - initialize with default values
         final defaultStats = GameStats(lastActiveDate: DateTime.now());
         state = defaultStats;
         // Save initial stats to Firestore
         await _saveGameStatsToFirestore();
+        _saveLocalGameStats(defaultStats);
         debugPrint('✅ Initialized game stats in Firestore');
       }
     } catch (e) {
       debugPrint('Error loading game stats from Firestore: $e');
+    }
+  }
+
+  /// Load stats from local cache (Hive) for offline/fast start
+  Future<void> _loadLocalGameStats() async {
+    try {
+      final local = await HiveService.getOrCreateGameStats();
+      state = local;
+    } catch (e) {
+      debugPrint('Error loading local game stats: $e');
+    }
+  }
+
+  /// Save stats to local cache (non-blocking)
+  Future<void> _saveLocalGameStats(GameStats stats) async {
+    try {
+      await HiveService.gameStatsBox.put('stats', stats);
+    } catch (e) {
+      debugPrint('Error saving local game stats: $e');
     }
   }
 
@@ -134,6 +162,7 @@ class GameStatsNotifier extends Notifier<GameStats> {
       level: newLevel,
       lastActiveDate: DateTime.now(),
     );
+    _saveLocalGameStats(state);
     // Save to Firestore (non-blocking)
     _saveGameStatsToFirestore().catchError((e) {
       debugPrint('Error saving game stats to Firestore: $e');
@@ -145,6 +174,7 @@ class GameStatsNotifier extends Notifier<GameStats> {
       coins: state.coins + coins,
       lastActiveDate: DateTime.now(),
     );
+    _saveLocalGameStats(state);
     // Save to Firestore (non-blocking)
     _saveGameStatsToFirestore().catchError((e) {
       debugPrint('Error saving game stats to Firestore: $e');
@@ -166,6 +196,7 @@ class GameStatsNotifier extends Notifier<GameStats> {
       totalFocusMinutes: state.totalFocusMinutes + minutes,
       lastActiveDate: DateTime.now(),
     );
+    _saveLocalGameStats(state);
     addXp(minutes); // 1 XP per minute
     // Note: addXp already saves to Firestore
   }
@@ -194,6 +225,7 @@ class GameStatsNotifier extends Notifier<GameStats> {
         lastActiveDate: now,
       );
     }
+    _saveLocalGameStats(state);
     // Save to Firestore (non-blocking)
     _saveGameStatsToFirestore().catchError((e) {
       debugPrint('Error saving game stats to Firestore: $e');
@@ -219,6 +251,7 @@ class GameStatsNotifier extends Notifier<GameStats> {
       unlockedItems: newUnlockedItems,
       lastActiveDate: DateTime.now(),
     );
+    _saveLocalGameStats(state);
     
     // Save to Firestore (non-blocking)
     _saveGameStatsToFirestore().catchError((e) {
