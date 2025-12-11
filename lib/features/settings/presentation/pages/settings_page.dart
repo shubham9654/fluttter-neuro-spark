@@ -418,7 +418,7 @@ class _SettingsPageState extends ConsumerState<SettingsPage> {
                           width: double.infinity,
                           child: ElevatedButton(
                             onPressed: () {
-                              context.push('/settings/subscription');
+                              context.push('/settings/premium');
                             },
                             style: ElevatedButton.styleFrom(
                               backgroundColor: Colors.white,

@@ -14,14 +14,14 @@ import 'core/services/stripe_service.dart';
 /// NeuroSpark Main Entry Point
 void main() async {
   WidgetsFlutterBinding.ensureInitialized();
-  
+
   // Enable error handling
   FlutterError.onError = (FlutterErrorDetails details) {
     FlutterError.presentError(details);
     debugPrint('🚨 Flutter Error: ${details.exception}');
     debugPrint('📍 Stack: ${details.stack}');
   };
-  
+
   // Initialize Firebase (non-blocking - app will work offline)
   try {
     await FirebaseService.initialize();
@@ -29,7 +29,7 @@ void main() async {
     debugPrint('⚠️ Firebase initialization failed: $e');
     debugPrint('📱 App will run in offline mode');
   }
-  
+
   // Initialize Hive (non-blocking - app will work without local storage)
   try {
     await HiveService.init();
@@ -38,14 +38,14 @@ void main() async {
     debugPrint('⚠️ Hive initialization failed: $e');
     debugPrint('📱 App will run without local storage');
   }
-  
+
   // Initialize AdMob (non-blocking)
   try {
     await AdService.initialize();
   } catch (e) {
     debugPrint('⚠️ AdMob initialization failed: $e');
   }
-  
+
   // Initialize In-App Purchases (non-blocking)
   try {
     await PaymentService.initialize();
@@ -55,12 +55,31 @@ void main() async {
 
   // Initialize Stripe (non-blocking; requires STRIPE_PUBLISHABLE_KEY dart-define)
   try {
+    // For testing: Set your key directly here as a fallback
+    // This ensures Stripe works even if dart-define isn't passed correctly
+    const String testStripeKey =
+        'pk_test_51OfkBkSBUDEGpwtLKz9sZGh9c3Mrvpreu8ZVmvNklnIzNnOU1fpIn7V07oTIP9YFXD1PszX90UNAiE362WNuSJxJ00jbEpFe9t';
+
+    debugPrint('🚀 Starting Stripe initialization...');
+    debugPrint('🔑 Using key: ${testStripeKey.substring(0, 20)}...');
+
     await StripeService.initialize(
+      publishableKey: testStripeKey, // Using direct key for now
       urlScheme: 'neuro_spark',
       merchantIdentifier: 'merchant.com.neurospark',
     );
-  } catch (e) {
-    debugPrint('⚠️ Stripe initialization failed: $e');
+
+    // Verify initialization
+    final isInit = StripeService.isInitialized;
+    debugPrint('✅ Stripe initialization check: $isInit');
+    if (!isInit) {
+      debugPrint(
+        '⚠️ WARNING: Stripe initialization completed but isInitialized is false!',
+      );
+    }
+  } catch (e, stackTrace) {
+    debugPrint('❌ Stripe initialization failed: $e');
+    debugPrint('📍 Stack trace: $stackTrace');
   }
 
   // Initialize Notifications (non-blocking)
@@ -69,13 +88,13 @@ void main() async {
   } catch (e) {
     debugPrint('⚠️ Notification service initialization failed: $e');
   }
-  
+
   // Set preferred orientations
   await SystemChrome.setPreferredOrientations([
     DeviceOrientation.portraitUp,
     DeviceOrientation.portraitDown,
   ]);
-  
+
   // Set system UI overlay style
   SystemChrome.setSystemUIOverlayStyle(
     const SystemUiOverlayStyle(
@@ -83,12 +102,8 @@ void main() async {
       statusBarIconBrightness: Brightness.dark,
     ),
   );
-  
-  runApp(
-    ProviderScope(
-      child: const NeuroSparkApp(),
-    ),
-  );
+
+  runApp(ProviderScope(child: const NeuroSparkApp()));
 }
 
 /// NeuroSpark App Root Widget
@@ -100,12 +115,12 @@ class NeuroSparkApp extends ConsumerWidget {
     return MaterialApp.router(
       title: AppConstants.appName,
       debugShowCheckedModeBanner: false,
-      
+
       // Theme
       theme: AppTheme.lightTheme,
       darkTheme: AppTheme.darkTheme,
       themeMode: ThemeMode.light,
-      
+
       // Navigation
       routerConfig: AppRouter.router,
     );

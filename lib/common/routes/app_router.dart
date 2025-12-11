@@ -32,6 +32,8 @@ import 'package:neuro_spark/features/settings/presentation/pages/edit_profile_pa
 import 'package:neuro_spark/features/settings/presentation/pages/privacy_policy_page.dart';
 import 'package:neuro_spark/features/settings/presentation/pages/terms_of_service_page.dart';
 import 'package:neuro_spark/features/settings/presentation/pages/subscription_page.dart';
+import 'package:neuro_spark/features/settings/presentation/pages/premium_plans_page.dart';
+import 'package:neuro_spark/features/settings/presentation/pages/stripe_test_page.dart';
 import 'package:neuro_spark/common/widgets/main_scaffold.dart';
 
 /// NeuroSpark App Router
@@ -269,6 +271,24 @@ class AppRouter {
             pageBuilder: (context, state) => MaterialPage(
               key: state.pageKey,
               child: const SubscriptionPage(),
+            ),
+          ),
+          // Premium Plans (Stripe)
+          GoRoute(
+            path: 'premium',
+            name: 'premium',
+            pageBuilder: (context, state) => MaterialPage(
+              key: state.pageKey,
+              child: const PremiumPlansPage(),
+            ),
+          ),
+          // Stripe Test Page (for debugging)
+          GoRoute(
+            path: 'stripe-test',
+            name: 'stripe-test',
+            pageBuilder: (context, state) => MaterialPage(
+              key: state.pageKey,
+              child: const StripeTestPage(),
             ),
           ),
         ],

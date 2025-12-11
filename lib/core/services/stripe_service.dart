@@ -23,28 +23,53 @@ class StripeService {
     String? urlScheme,
     FirebaseFunctions? functions,
   }) async {
-    final key =
-        publishableKey ??
-        const String.fromEnvironment('STRIPE_PUBLISHABLE_KEY');
+    try {
+      final key =
+          publishableKey ??
+          const String.fromEnvironment('STRIPE_PUBLISHABLE_KEY');
 
-    if (key.isEmpty) {
-      debugPrint('⚠️ Stripe publishable key missing; skipping initialization.');
-      return;
-    }
+      debugPrint('🔍 Stripe key check:');
+      debugPrint('   - publishableKey parameter: ${publishableKey ?? "null"}');
+      debugPrint('   - Environment key: ${const String.fromEnvironment('STRIPE_PUBLISHABLE_KEY').isEmpty ? "EMPTY" : "SET"}');
+      debugPrint('   - Final key to use: ${key.isEmpty ? "EMPTY" : "${key.substring(0, 12)}..."}');
 
-    Stripe.publishableKey = key;
-    if (merchantIdentifier != null) {
-      Stripe.merchantIdentifier = merchantIdentifier;
-    }
-    if (urlScheme != null) {
-      Stripe.urlScheme = urlScheme;
-    }
+      if (key.isEmpty) {
+        debugPrint('⚠️ Stripe publishable key missing; skipping initialization.');
+        debugPrint('💡 To enable Stripe, run: flutter run --dart-define=STRIPE_PUBLISHABLE_KEY=pk_test_...');
+        debugPrint('💡 Or pass it directly: StripeService.initialize(publishableKey: "pk_test_...")');
+        _isInitialized = false;
+        return;
+      }
 
-    await Stripe.instance.applySettings();
-    _functions = functions ?? FirebaseFunctions.instance;
-    _isInitialized = true;
-    debugPrint('✅ Stripe initialized with Firebase Functions');
+      debugPrint('🔑 Initializing Stripe with key: ${key.substring(0, 12)}...');
+      
+      Stripe.publishableKey = key;
+      if (merchantIdentifier != null) {
+        Stripe.merchantIdentifier = merchantIdentifier;
+      }
+      if (urlScheme != null) {
+        Stripe.urlScheme = urlScheme;
+      }
+
+      debugPrint('📝 Setting Stripe publishable key...');
+      await Stripe.instance.applySettings();
+      debugPrint('📝 Setting Firebase Functions...');
+      _functions = functions ?? FirebaseFunctions.instance;
+      debugPrint('📝 Marking Stripe as initialized...');
+      _isInitialized = true;
+      debugPrint('✅ Stripe initialized successfully!');
+      debugPrint('✅ isInitialized flag: $_isInitialized');
+      debugPrint('✅ Firebase Functions: ${_functions != null ? "SET" : "NULL"}');
+    } catch (e, stackTrace) {
+      _isInitialized = false;
+      debugPrint('❌ Stripe initialization error: $e');
+      debugPrint('📍 Stack trace: $stackTrace');
+      rethrow;
+    }
   }
+
+  /// Check if Stripe is initialized
+  static bool get isInitialized => _isInitialized;
 
   /// Create a payment intent via Firebase Function.
   ///
@@ -143,9 +168,17 @@ class StripeService {
     Map<String, dynamic>? metadata,
   }) async {
     if (!_isInitialized) {
-      throw Exception(
-        'Stripe not initialized. Call StripeService.initialize().',
-      );
+      final key = const String.fromEnvironment('STRIPE_PUBLISHABLE_KEY');
+      if (key.isEmpty) {
+        throw Exception(
+          'Stripe not initialized. Please set STRIPE_PUBLISHABLE_KEY.\n'
+          'Run: flutter run --dart-define=STRIPE_PUBLISHABLE_KEY=pk_test_...',
+        );
+      } else {
+        throw Exception(
+          'Stripe not initialized. Call StripeService.initialize() first.',
+        );
+      }
     }
 
     try {
