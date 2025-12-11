@@ -23,12 +23,25 @@ class _DopamineShopPageState extends ConsumerState<DopamineShopPage> {
   String? _activeSoundId;
   bool _isLoadingSound = false;
 
-  // Streaming ambience sources (royalty-free). Replace with bundled assets if desired.
+  /// Calming ambience sources (remote).
+  /// If any link misbehaves, swap to another HTTPS MP3 URL.
   final Map<String, String> _soundUrls = {
     'sound_rain':
-        'https://cdn.pixabay.com/audio/2021/11/19/audio_4a5d6bce1e.mp3',
+        'https://cdn.pixabay.com/audio/2021/11/30/audio_37b8c5c9a3.mp3', // gentle rain
     'sound_cafe':
-        'https://cdn.pixabay.com/audio/2022/03/15/audio_f3c2a3bfa7.mp3',
+        'https://cdn.pixabay.com/audio/2022/07/09/audio_5b4ba35a59.mp3', // soft cafe ambience
+    'theme_sunset':
+        'https://cdn.pixabay.com/audio/2022/08/26/audio_1d6f19e740.mp3', // warm pad
+    'theme_ocean':
+        'https://cdn.pixabay.com/audio/2022/03/15/audio_f3c2a3bfa7.mp3', // oceanic calm
+    'avatar_1':
+        'https://cdn.pixabay.com/audio/2022/10/11/audio_0fa09b3240.mp3', // light airy pad
+    'avatar_2':
+        'https://cdn.pixabay.com/audio/2023/01/11/audio_3e1ad55aa5.mp3', // mellow tone
+    'power_2x':
+        'https://cdn.pixabay.com/audio/2022/03/11/audio_963c44ad74.mp3', // soft pulse
+    'power_streak':
+        'https://cdn.pixabay.com/audio/2021/11/30/audio_b6df2d3e92.mp3', // calm chime
   };
 
   @override
@@ -109,6 +122,9 @@ class _DopamineShopPageState extends ConsumerState<DopamineShopPage> {
         category: 'Power-ups',
       ),
     ];
+
+    // Sort by price ascending for a clearer progression
+    shopItems.sort((a, b) => a.price.compareTo(b.price));
 
     return Scaffold(
       backgroundColor: AppColors.backgroundLight,
@@ -423,7 +439,7 @@ class _DopamineShopPageState extends ConsumerState<DopamineShopPage> {
                               Padding(
                                 padding: const EdgeInsets.only(left: 6),
                                 child: Text(
-                                  isActiveSound ? 'Playing' : 'Tap to play',
+                                  isActiveSound ? 'Tap to pause' : 'Tap to play',
                                   style: AppTextStyles.labelSmall.copyWith(
                                     color: AppColors.textMedium,
                                     fontWeight: FontWeight.w600,
@@ -522,12 +538,33 @@ class _DopamineShopPageState extends ConsumerState<DopamineShopPage> {
 
     HapticHelper.mediumImpact();
 
+    // Prevent concurrent taps while loading
+    if (_isLoadingSound) return;
+
     // Stop current sound if tapping the active one
     if (_activeSoundId == item.id) {
-      await _audioPlayer.stop();
       setState(() {
-        _activeSoundId = null;
+        _isLoadingSound = true;
       });
+      try {
+        await _audioPlayer.stop();
+        await _audioPlayer.seek(Duration.zero);
+        setState(() {
+          _activeSoundId = null;
+          _isLoadingSound = false;
+        });
+        ScaffoldMessenger.of(context).showSnackBar(
+          SnackBar(
+            content: Text('Stopped ${item.name}'),
+            duration: const Duration(seconds: 1),
+          ),
+        );
+      } catch (e) {
+        setState(() {
+          _activeSoundId = null;
+          _isLoadingSound = false;
+        });
+      }
       return;
     }
 
@@ -537,7 +574,7 @@ class _DopamineShopPageState extends ConsumerState<DopamineShopPage> {
     });
 
     try {
-      await _audioPlayer.stop();
+      await _audioPlayer.stop(); // ensure previous stops before new play
       await _audioPlayer.setUrl(soundUrl);
       await _audioPlayer.setLoopMode(LoopMode.one);
       await _audioPlayer.play();
