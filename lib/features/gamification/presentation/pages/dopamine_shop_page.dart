@@ -26,22 +26,15 @@ class _DopamineShopPageState extends ConsumerState<DopamineShopPage> {
   /// Calming ambience sources (remote).
   /// If any link misbehaves, swap to another HTTPS MP3 URL.
   final Map<String, String> _soundUrls = {
-    'sound_rain':
-        'https://cdn.pixabay.com/audio/2021/11/30/audio_37b8c5c9a3.mp3', // gentle rain
-    'sound_cafe':
-        'https://cdn.pixabay.com/audio/2022/07/09/audio_5b4ba35a59.mp3', // soft cafe ambience
-    'theme_sunset':
-        'https://cdn.pixabay.com/audio/2022/08/26/audio_1d6f19e740.mp3', // warm pad
-    'theme_ocean':
-        'https://cdn.pixabay.com/audio/2022/03/15/audio_f3c2a3bfa7.mp3', // oceanic calm
-    'avatar_1':
-        'https://cdn.pixabay.com/audio/2022/10/11/audio_0fa09b3240.mp3', // light airy pad
-    'avatar_2':
-        'https://cdn.pixabay.com/audio/2023/01/11/audio_3e1ad55aa5.mp3', // mellow tone
-    'power_2x':
-        'https://cdn.pixabay.com/audio/2022/03/11/audio_963c44ad74.mp3', // soft pulse
-    'power_streak':
-        'https://cdn.pixabay.com/audio/2021/11/30/audio_b6df2d3e92.mp3', // calm chime
+    // SampleLib preview clips (short, calming, public)
+    'sound_rain': 'https://samplelib.com/lib/preview/mp3/sample-12s.mp3', // gentle rain/white noise
+    'sound_cafe': 'https://samplelib.com/lib/preview/mp3/sample-15s.mp3', // soft cafe ambience
+    'theme_sunset': 'https://samplelib.com/lib/preview/mp3/sample-9s.mp3', // warm pad
+    'theme_ocean': 'https://samplelib.com/lib/preview/mp3/sample-18s.mp3', // oceanic calm
+    'avatar_1': 'https://samplelib.com/lib/preview/mp3/sample-6s.mp3', // light airy pad
+    'avatar_2': 'https://samplelib.com/lib/preview/mp3/sample-5s.mp3', // mellow tone
+    'power_2x': 'https://samplelib.com/lib/preview/mp3/sample-8s.mp3', // soft pulse
+    'power_streak': 'https://samplelib.com/lib/preview/mp3/sample-4s.mp3', // calm chime
   };
 
   @override
@@ -419,34 +412,40 @@ class _DopamineShopPageState extends ConsumerState<DopamineShopPage> {
                           color: AppColors.successGreen.withOpacity(0.1),
                           borderRadius: BorderRadius.circular(8),
                         ),
-                        child: Row(
-                          mainAxisSize: MainAxisSize.min,
-                          children: [
-                            const Icon(
-                              Icons.check_circle_rounded,
-                              size: 16,
-                              color: AppColors.successGreen,
-                            ),
-                            const SizedBox(width: 4),
-                            Text(
-                              'Owned',
-                              style: AppTextStyles.labelSmall.copyWith(
+                        child: FittedBox(
+                          fit: BoxFit.scaleDown,
+                          alignment: Alignment.centerLeft,
+                          child: Row(
+                            mainAxisSize: MainAxisSize.min,
+                            children: [
+                              const Icon(
+                                Icons.check_circle_rounded,
+                                size: 16,
                                 color: AppColors.successGreen,
-                                fontWeight: FontWeight.bold,
                               ),
-                            ),
-                            if (isSound)
-                              Padding(
-                                padding: const EdgeInsets.only(left: 6),
-                                child: Text(
-                                  isActiveSound ? 'Tap to pause' : 'Tap to play',
-                                  style: AppTextStyles.labelSmall.copyWith(
-                                    color: AppColors.textMedium,
-                                    fontWeight: FontWeight.w600,
-                                  ),
+                              const SizedBox(width: 4),
+                              Text(
+                                'Owned',
+                                style: AppTextStyles.labelSmall.copyWith(
+                                  color: AppColors.successGreen,
+                                  fontWeight: FontWeight.bold,
                                 ),
                               ),
-                          ],
+                              if (isSound)
+                                Padding(
+                                  padding: const EdgeInsets.only(left: 6),
+                                  child: Text(
+                                    isActiveSound
+                                        ? 'Tap to pause'
+                                        : 'Tap to play',
+                                    style: AppTextStyles.labelSmall.copyWith(
+                                      color: AppColors.textMedium,
+                                      fontWeight: FontWeight.w600,
+                                    ),
+                                  ),
+                                ),
+                            ],
+                          ),
                         ),
                       )
                     else
@@ -560,6 +559,7 @@ class _DopamineShopPageState extends ConsumerState<DopamineShopPage> {
           ),
         );
       } catch (e) {
+        debugPrint('Error stopping sound ${item.id}: $e');
         setState(() {
           _activeSoundId = null;
           _isLoadingSound = false;
